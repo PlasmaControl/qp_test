@@ -1,5 +1,9 @@
 Minimal extraction of the box-constraint qp solver in the PCS from VEP, which relies on nstx_math. 
 
+Before anything, be sure to 
+
+`module load gcc7/default`
+
 Compile with 
 
 `gcc -D VEPN=2 -o main.exe main.c qp_solver.c nstx_math.c`
