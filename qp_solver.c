@@ -3,10 +3,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include <float.h> // for FLT_MAX
-#include <stdio.h> //for testing
+#include <stdio.h> //for debugging (printf's)
 // A1.3.1
 
-#define VERBOSE_LEVEL 1
+#define VERBOSE_LEVEL 0
 
 static float clamp(float const min, float const max, float val) {
   if(val < min) val = min;
@@ -66,6 +66,8 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
     memset(g, 0, sizeof(g));
     nstx_matrixMult1d2d(N, N, xInit, Gamma, g);
 
+    for (size_t i = 0; i < N; ++i)
+      g[i] += phi[i];
 #if VERBOSE_LEVEL>=2
     for (int i=0; i<N; i++) {
       for (int j=0; j<N; j++) {
@@ -75,9 +77,6 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
       printf("g[i]: %f\n",g[i]);
     }
 #endif
-
-    for (size_t i = 0; i < N; ++i)
-      g[i] += phi[i];
 
     // A1.4.1
     // binding is true if x is currently outside the range and planning to head further out
@@ -101,7 +100,7 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
     nstx_matrixInvert(N, hRed, hRedInv);
 
 #if VERBOSE_LEVEL>=2
-    nprintf("\n");
+    printf("\n");
     for (int i=0; i<N; i++) {
       for (int j=0; j<N; j++) {
 	printf("hRed[i][j]: %f\n",hRed[i][j]);
