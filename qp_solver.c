@@ -6,7 +6,7 @@
 #include <stdio.h> //for testing
 // A1.3.1
 
-#define DEBUG true
+#define VERBOSE_LEVEL 1
 
 static float clamp(float const min, float const max, float val) {
   if(val < min) val = min;
@@ -16,21 +16,30 @@ static float clamp(float const min, float const max, float val) {
 
 void vep_box(float const lambda, size_t const N, float const phi[VEPN], float const Gamma[VEPN][VEPN], float xOut[VEPN], float const l[VEPN], float const u[VEPN]) {
   /* Dan's original code, unclear from spec why these are the bounds but prob particular to his problem
-  float u[N];
-  float l[N];
-  for (size_t i = 0; i < N; ++i) {
-    u[i] = 1.0f - xOut[i];
-    l[i] = -xOut[i];
-  }
+     float u[N];
+     float l[N];
+     for (size_t i = 0; i < N; ++i) {
+     u[i] = 1.0f - xOut[i];
+     l[i] = -xOut[i];
+     }
   */
 
   // A1.2.1
   float xBest[N];
   float xInit[N];
   for (size_t i = 0; i < N; ++i) {
-    xInit[i] = clamp(l[i], u[i], 0.0f);
+    //xInit[i] = clamp(l[i], u[i], 0.0f);
+    // change it so xOut is the initial guess, rather than 0
+    xInit[i] = clamp(l[i], u[i], xOut[i]);
     xBest[i] = xInit[i];
   }
+
+#if VERBOSE_LEVEL>=1
+  printf("-----INITIALIZATION-----\n");
+  for (int i=0; i<N; i++) {
+    printf("\txBest[i]: %f\n",xBest[i]);
+  }
+#endif
 
   float cost(size_t const N, float const x[N]) {
     float t[N];
@@ -49,7 +58,7 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
     size_t NI;
     size_t NK;
     float cb;
-  } scalars = { 1, 4, 0.1f };
+  } scalars = { 100, 4, 0.1f };
   for (size_t iNewton = 0; iNewton < scalars.NI; ++iNewton) {
     // A1.3.2
     // g is \grad{f} for f the cost function
@@ -57,7 +66,7 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
     memset(g, 0, sizeof(g));
     nstx_matrixMult1d2d(N, N, xInit, Gamma, g);
 
-#ifdef DEBUG
+#if VERBOSE_LEVEL>=2
     for (int i=0; i<N; i++) {
       for (int j=0; j<N; j++) {
 	printf("Gamma[i][j]: %f\n",Gamma[i][j]);
@@ -91,8 +100,8 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
     float hRedInv[N][N];
     nstx_matrixInvert(N, hRed, hRedInv);
 
-#ifdef DEBUG
-    printf("\n");
+#if VERBOSE_LEVEL>=2
+    nprintf("\n");
     for (int i=0; i<N; i++) {
       for (int j=0; j<N; j++) {
 	printf("hRed[i][j]: %f\n",hRed[i][j]);
@@ -115,7 +124,7 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
     for (size_t i = 0; i < N; ++i)
       d[i] *= -1.0f;
 
-#ifdef DEBUG
+#if VERBOSE_LEVEL>=2
     printf("\n");
     for (int i=0; i<N; ++i) {
       printf("Initial d[i]: %f\n",d[i]);
@@ -148,16 +157,35 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
       }
     }
     fInit = fLow;
-    for (size_t i = 0; i < N; ++i)
-      xInit[i] = xLow[i];
 
     if (fLow < fBest) {
-      fBest = fLow;
       for (size_t i = 0; i < N; ++i)
-	xBest[i] = xInit[i];
+	// xBest = xInit + lambda*(xLow-xInit)
+	xBest[i] = (1-lambda)*xInit[i] + lambda*xLow[i];
     }
+    fBest = cost(N, xBest);
+    
+    for (size_t i = 0; i < N; ++i)
+      xInit[i] = xBest[i];
+    
+
+#if VERBOSE_LEVEL>=1
+    printf("-----ITERATION %d RESULT-----\n",iNewton+1);
+    for (int i=0; i<N; i++) {
+      printf("\txBest[i]: %f\n",xBest[i]);
+    }    
+#endif
   }
 
+#if VERBOSE_LEVEL>=1
+  printf("\n");
+  printf("lambda (for scaling of final stepsize in iteration): %f\n",lambda);
+  printf("cb (for line search exponential steps): %f\n",scalars.cb);
+  printf("l: %f\n",l);
+  printf("u: %f\n",u);
+#endif
   for (size_t i = 0; i < N; ++i) 
-    xOut[i] += lambda * xBest[i];
+    // original code was not simply outputting xBest, I think
+    // it was incorrect
+    xOut[i] = xBest[i]; //+= lambda * xBest[i];
 }

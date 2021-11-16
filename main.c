@@ -11,6 +11,7 @@ int main(void) {
   const float u[VEPN]={1,1};
 
   vep_box(lambda, N, phi, Gamma, xOut, l, u);
+  printf("FINAL RESULTS FROM main.c:\n");
   for (int i=0; i<N; i++) {
     printf("%f\n",xOut[i]);
   }
