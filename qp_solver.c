@@ -6,7 +6,7 @@
 #include <stdio.h> //for debugging (printf's)
 // A1.3.1
 
-#define VERBOSE_LEVEL 0
+#define VERBOSE_LEVEL 1
 
 static float clamp(float const min, float const max, float val) {
   if(val < min) val = min;
@@ -14,7 +14,9 @@ static float clamp(float const min, float const max, float val) {
   return val;
 }
 
-void vep_box(float const lambda, size_t const N, float const phi[VEPN], float const Gamma[VEPN][VEPN], float xOut[VEPN], float const l[VEPN], float const u[VEPN]) {
+// Note C99 allows you to use "N" from the previous argument (kinda weird), but in general 
+// C forces you to specify the length for every dimension greater than 1
+void vep_box(float const lambda, size_t const N, float const phi[N], float const Gamma[N][N], float xOut[N], float const l[N], float const u[N]) {
   /* Dan's original code, unclear from spec why these are the bounds but prob particular to his problem
      float u[N];
      float l[N];
@@ -58,7 +60,7 @@ void vep_box(float const lambda, size_t const N, float const phi[VEPN], float co
     size_t NI;
     size_t NK;
     float cb;
-  } scalars = { 100, 4, 0.1f };
+  } scalars = { 3, 4, 0.1f };
   for (size_t iNewton = 0; iNewton < scalars.NI; ++iNewton) {
     // A1.3.2
     // g is \grad{f} for f the cost function
