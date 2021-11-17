@@ -6,7 +6,12 @@
 #include <stdio.h> //for debugging (printf's)
 // A1.3.1
 
+// 0 is no output
+// 1 shows iterations and parameters
+// 2 shows a ton of stuff along the way
+#ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 1
+#endif
 
 static float clamp(float const min, float const max, float val) {
   if(val < min) val = min;
@@ -182,8 +187,10 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
   printf("\n");
   printf("lambda (for scaling of final stepsize in iteration): %f\n",lambda);
   printf("cb (for line search exponential steps): %f\n",scalars.cb);
-  printf("l: %f\n",l);
-  printf("u: %f\n",u);
+  for (int i=0; i<N; i++)
+    printf("l[i]: %f\n",l[i]);
+  for (int i=0; i<N; i++)
+    printf("u[i]: %f\n",u[i]);
 #endif
   for (size_t i = 0; i < N; ++i) 
     // original code was not simply outputting xBest, I think
