@@ -1,4 +1,4 @@
-Minimal extraction of the box-constraint qp solver in the PCS from VEP, which relies on nstx_math. 
+Minimal extraction + bug fixing of the box-constraint qp solver in the PCS from VEP, which relies on nstx_math. 
 
 Before anything, be sure to 
 
