@@ -8,7 +8,7 @@ Compile with
 
 `gcc -o main.exe main.c qp_solver.c nstx_math.c`
 
-Run with 
+Being sure to add the qp_tests directory to your `LD_LIBRARY_PATH` via `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:...`, run with 
 
 `./main.exe`
 

@@ -65,7 +65,7 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
     size_t NI;
     size_t NK;
     float cb;
-  } scalars = { 3, 4, 0.1f };
+  } scalars = { 100, 4, 0.1f };
   for (size_t iNewton = 0; iNewton < scalars.NI; ++iNewton) {
     // A1.3.2
     // g is \grad{f} for f the cost function
