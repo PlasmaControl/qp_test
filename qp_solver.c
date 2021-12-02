@@ -41,10 +41,23 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
     xBest[i] = xInit[i];
   }
 
+#if VERBOSE_LEVEL>=2
+    for (int i=0; i<N; i++) {
+      printf("Gamma[%d]: ",i);
+      for (int j=0; j<N; j++) {
+	printf("%f\t",Gamma[i][j]);
+      }
+      printf("\n");
+    }
+    for (int i=0; i<N; i++) {
+	printf("Phi[%d]: %f\n",i,phi[i]);
+    }
+#endif
+
 #if VERBOSE_LEVEL>=1
   printf("-----INITIALIZATION-----\n");
   for (int i=0; i<N; i++) {
-    printf("\txBest[i]: %f\n",xBest[i]);
+    printf("\txBest[%d]: %f\n",i,xBest[i]);
   }
 #endif
 
@@ -65,7 +78,7 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
     size_t NI;
     size_t NK;
     float cb;
-  } scalars = { 100, 4, 0.1f };
+  } scalars = { 2, 4, 0.1f };
   for (size_t iNewton = 0; iNewton < scalars.NI; ++iNewton) {
     // A1.3.2
     // g is \grad{f} for f the cost function
@@ -77,11 +90,8 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
       g[i] += phi[i];
 #if VERBOSE_LEVEL>=2
     for (int i=0; i<N; i++) {
-      for (int j=0; j<N; j++) {
-	printf("Gamma[i][j]: %f\n",Gamma[i][j]);
-      }
-      printf("xInit[i]: %f\n",xInit[i]);
-      printf("g[i]: %f\n",g[i]);
+      printf("xInit[%d]: %f\n",i,xInit[i]);
+      printf("g[%d]: %f\n",i,g[i]);
     }
 #endif
 
@@ -110,12 +120,12 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
     printf("\n");
     for (int i=0; i<N; i++) {
       for (int j=0; j<N; j++) {
-	printf("hRed[i][j]: %f\n",hRed[i][j]);
+	printf("hRed[%d][%d]: %f\n",i,j,hRed[i][j]);
       }
     }
     for (int i=0; i<N; i++) {
       for (int j=0; j<N; j++) {
-	printf("hRedInv[i][j]: %f\n",hRedInv[i][j]);
+	printf("hRedInv[%d][%d]: %f\n",i,j,hRedInv[i][j]);
       }
     }
 #endif
@@ -133,7 +143,7 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
 #if VERBOSE_LEVEL>=2
     printf("\n");
     for (int i=0; i<N; ++i) {
-      printf("Initial d[i]: %f\n",d[i]);
+      printf("Initial d[%d]: %f\n",i,d[i]);
     }
     printf("\n");
 #endif
@@ -178,7 +188,7 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
 #if VERBOSE_LEVEL>=1
     printf("-----ITERATION %d RESULT-----\n",iNewton+1);
     for (int i=0; i<N; i++) {
-      printf("\txBest[i]: %f\n",xBest[i]);
+      printf("\txBest[%d]: %f\n",i,xBest[i]);
     }    
 #endif
   }
@@ -188,12 +198,17 @@ void vep_box(float const lambda, size_t const N, float const phi[N], float const
   printf("lambda (for scaling of final stepsize in iteration): %f\n",lambda);
   printf("cb (for line search exponential steps): %f\n",scalars.cb);
   for (int i=0; i<N; i++)
-    printf("l[i]: %f\n",l[i]);
+    printf("l[%d]: %f\n",i,l[i]);
   for (int i=0; i<N; i++)
-    printf("u[i]: %f\n",u[i]);
+    printf("u[%d]: %f\n",i,u[i]);
 #endif
-  for (size_t i = 0; i < N; ++i) 
+  for (size_t i = 0; i < N; ++i) {
     // original code was not simply outputting xBest, I think
     // it was incorrect
     xOut[i] = xBest[i]; //+= lambda * xBest[i];
+  }
+#if VERBOSE_LEVEL>=1
+  for(int i=0; i<N; i++)
+    printf("xOut[%d]: %f\n",i,xOut[i]);
+#endif
 }

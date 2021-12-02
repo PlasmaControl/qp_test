@@ -18,7 +18,10 @@ c_lib.vep_box.argtypes = [
     ctypes.c_size_t, #N
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #phi
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS'), #Gamma
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #xOut
+    # we want to change the value of an input array, so have to 
+    # convert to a pointer (C passes by value, so we need to supply
+    # an address to copy rather than an array of data)
+    ctypes.POINTER(ctypes.c_double), #xOut
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #l
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS')] #u
 c_lib.vep_box.restype = ctypes.c_void_p #void return
@@ -83,8 +86,6 @@ qp=osqp.OSQP()
 Aineq=np.eye(horizon*nu)
 l=-1000*np.ones(nu*horizon)
 u=1000*np.ones(nu*horizon)
-print(phi)
-print(gamma)
 qp.setup(P=scipy.sparse.csc_matrix(gamma),
          q=phi,
          A=scipy.sparse.csc_matrix(Aineq),
@@ -98,14 +99,18 @@ def get_u_mpc(x):
 def get_u_mpc_pcs(x):
     phi=2*x.T@E.T@Qhat@F
     xout=np.ones(nu*horizon)
+
+    # we want to change the value of an input array, so have to 
+    # convert to a pointer (C passes by value, so we need to supply
+    # an address to copy rather than an array of data)
+    xout=xout.astype(np.float32)
     c_lib.vep_box(1, #lambda
                   nu*horizon, 
                   phi.astype(np.float32), 
                   gamma.astype(np.float32), 
-                  xout.astype(np.float32), 
+                  xout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                   l.astype(np.float32), 
                   u.astype(np.float32))
-    print(xout)
     return xout[:nu]
 
 num_sim_timesteps=1000
@@ -122,6 +127,7 @@ X_MPC = np.zeros(nx*num_sim_timesteps)
 X_MPC[:nx]=x0
 u_MPC=np.zeros(nu*num_sim_timesteps)
 
+runtimes=[]
 for i in range(1,num_sim_timesteps):
     u_uncontrolled[i*nu:(i+1)*nu] = 0
     X_uncontrolled[i*nx:(i+1)*nx] = A@X_uncontrolled[(i-1)*nx:i*nx]+B@u_uncontrolled[i*nu:(i+1)*nu]
@@ -129,9 +135,12 @@ for i in range(1,num_sim_timesteps):
     u_LQR[i*nu:(i+1)*nu]=-K@X_LQR[(i-1)*nx:i*nx]
     X_LQR[i*nx:(i+1)*nx] = A@X_LQR[(i-1)*nx:i*nx]+B@u_LQR[i*nu:(i+1)*nu]
 
-    u_MPC[i*nu:(i+1)*nu] = get_u_mpc(X_MPC[(i-1)*nx:i*nx])
+    before_time=time.perf_counter()
+    u_MPC[i*nu:(i+1)*nu] = get_u_mpc_pcs(X_MPC[(i-1)*nx:i*nx])
+    after_time=time.perf_counter()
+    runtimes.append(after_time-before_time)
     X_MPC[i*nx:(i+1)*nx] = A@X_MPC[(i-1)*nx:i*nx]+B@u_MPC[i*nu:(i+1)*nu]
-
+print(f'Horizon={horizon}: Took {np.mean(runtimes):.2e}+/-{np.std(runtimes):.2e}')
 '''
 x_target=np.array([0,0]).T
 Q=np.eye(nx)
@@ -139,20 +148,22 @@ R=np.eye(nu)
 U=scipy.linalg.solve_discrete_are(A,B,Q,R)
 X_LQR = E@x0 + F@U
 '''
-times=np.linspace(0,num_sim_timesteps*deltaT,num_sim_timesteps)
-fig,axes=plt.subplots(nx+nu)
-for i in range(nx):
-#    axes[i].plot(times,X_uncontrolled[i::nx],label='uncontrolled')
-    # axes[i].plot(times,X_LQR[i::nx],label='LQR')
-    axes[i].plot(times,X_MPC[i::nx],label='MPC')
-for i in range(nu):
-#    axes[i+nx].plot(times,u_uncontrolled[i::nu],label='uncontrolled')
-#    axes[i+nx].plot(times,u_LQR[i::nu],label='LQR')
-    axes[i+nx].plot(times,u_MPC[i::nu],label='MPC')
-axes[0].set_title('States')
-axes[nx].set_title('Controls')
-plt.legend()
-plt.show()
+
+if True:
+    times=np.linspace(0,num_sim_timesteps*deltaT,num_sim_timesteps)
+    fig,axes=plt.subplots(nx+nu)
+    for i in range(nx):
+        axes[i].plot(times,X_uncontrolled[i::nx],label='uncontrolled')
+        axes[i].plot(times,X_LQR[i::nx],label='LQR')
+        axes[i].plot(times,X_MPC[i::nx],label='MPC')
+    for i in range(nu):
+        axes[i+nx].plot(times,u_uncontrolled[i::nu],label='uncontrolled')
+        axes[i+nx].plot(times,u_LQR[i::nu],label='LQR')
+        axes[i+nx].plot(times,u_MPC[i::nu],label='MPC')
+    axes[0].set_title('States')
+    axes[nx].set_title('Controls')
+    plt.legend()
+    plt.show()
 '''
 
 lamb=1
