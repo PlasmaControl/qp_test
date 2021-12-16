@@ -61,7 +61,7 @@ P=scipy.linalg.solve_discrete_are(A,B,Q,R)
 K=scipy.linalg.inv(R) @ B.T @ P
 
 # MPC pre-computation
-horizon=1
+horizon=3
 nx=np.shape(B)[0]
 nu=np.shape(B)[1]
 x0=np.array([0,0.01]).T
@@ -83,17 +83,37 @@ phi=np.ones(nu*horizon)
 gamma=F.T@Qhat@F+Rhat
 gamma=(gamma+gamma.T) # ensure exactly symmetric and add factor of 2
 qp=osqp.OSQP()
+# for constraints on actuators
 Aineq=np.eye(horizon*nu)
-l=-1000*np.ones(nu*horizon)
-u=1000*np.ones(nu*horizon)
+l_real=-0.005*np.ones(nu*horizon)
+u_real=0.005*np.ones(nu*horizon)
+# for constraints in state space
+# (not supported for the pcs version)
+# X=E@x0+F@U, so set constraints s.t. X-E@x0=F@U
+Aineq_x=F
+l_real_x=-np.inf*np.ones(nx*horizon)
+u_real_x=np.inf*np.ones(nx*horizon)
+Aineq_u=np.eye(horizon*nu)
+l_real_u=-np.inf*np.ones(nu*horizon)
+u_real_u=np.inf*np.ones(nu*horizon)
+# x constraints
+u_real_x[::2]=0.003 # position of spring < 0.003
+# u constraints
+l_real_u[:]=-0.2
+u_real_u[:]=0
 qp.setup(P=scipy.sparse.csc_matrix(gamma),
          q=phi,
-         A=scipy.sparse.csc_matrix(Aineq),
-         l=l, u=u, 
+         A=scipy.sparse.csc_matrix(np.vstack((Aineq_u,Aineq_x))),
+         l=np.ones(len(l_real_u)+len(l_real_x)), 
+         u=np.ones(len(u_real_u)+len(u_real_x)), 
          verbose=False)
 def get_u_mpc(x):
     phi=2*x.T@E.T@Qhat@F
-    qp.update(q=phi)
+    l=np.hstack((l_real_u,
+                 l_real_x-E@x))
+    u=np.hstack((u_real_u,
+                 u_real_x-E@x))
+    qp.update(q=phi,l=l,u=u)
     results=qp.solve()
     return results.x[:nu]
 def get_u_mpc_pcs(x):
@@ -151,7 +171,7 @@ X_LQR = E@x0 + F@U
 
 if True:
     times=np.linspace(0,num_sim_timesteps*deltaT,num_sim_timesteps)
-    fig,axes=plt.subplots(nx+nu)
+    fig,axes=plt.subplots(nx+nu,sharex=True)
     for i in range(nx):
         axes[i].plot(times,X_uncontrolled[i::nx],label='uncontrolled')
         axes[i].plot(times,X_LQR[i::nx],label='LQR')
