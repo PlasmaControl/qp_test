@@ -163,7 +163,7 @@ import ctypes
 import os
 # set up to call C function vep_box from python
 try: 
-    os.system("gcc -shared -fPIC -o libqp_solver.so qp_solver.c nstx_math.c")
+    os.system("gcc -Wall -shared -fPIC -o libqp_solver.so qp_solver.c nstx_math.c -Ofast -march=native")
 except:
     print("make sure you have a C99 compiler loaded, e.g. module load gcc7/default")
 libname=os.path.join(os.path.dirname(os.path.realpath(__file__)),
