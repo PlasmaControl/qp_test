@@ -13,7 +13,7 @@ void nstx_matrixMult1d2d(size_t const N, size_t const M, float const A[N], float
 			out[i] += A[j] * B[j][i];
 }
 
-void nstx_matrixMult2d1d(size_t const N, size_t const M, float const A[N][M], float const B[M], float out[M]) {
+void nstx_matrixMult2d1d(size_t const N, size_t const M, float const A[N][M], float const B[M], float out[N]) {
 	for (size_t i = 0; i < N; ++i)
 		for (size_t j = 0; j < M; ++j)
 			out[i] += A[i][j] * B[j];
