@@ -2,6 +2,11 @@
 #include <stddef.h>
 #include <math.h>
 
+float clamp(float const min, float const max, float const val) {
+	float const t = val < min? min : val;
+	return t > max? max : t;
+}
+
 void nstx_matrixMult1d2d(size_t const N, size_t const M, float const A[N], float const B[N][M], float out[M]) {
 	for (size_t i = 0; i < M; ++i)
 		for (size_t j = 0; j < N; ++j)
