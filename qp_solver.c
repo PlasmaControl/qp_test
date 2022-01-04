@@ -32,11 +32,9 @@ void qp_solve(size_t const N, size_t const M,
 	      float const rho, float const sigma, float const alpha, 
 	      float const q[N], 
 	      float const l[M], float const u[M], 
-	      float const x0[restrict N],  // FIXME y0 missing
 	      float const eps, size_t const nIter,
 	      float xOut[restrict N],
-	      float yOut[M],
-	      float r[2]) { // FIXME r unused
+	      float yOut[M]) {
 
 	float fastMax(float const a, float const b) {
 		// GCC isn't optimizing fmaxf correctly, so inline here
@@ -61,10 +59,11 @@ void qp_solve(size_t const N, size_t const M,
 
 	float x[N];
 	for (size_t i = 0; i < N; ++i)
-		x[i] = x0[i];
+		x[i] = xOut[i];
 
 	float y[M];
-	memset(y, 0, sizeof(y));
+	for (size_t i = 0; i < M; ++i)
+		y[i] = yOut[i];
 
 	float z[M];
 	memset(z, 0, sizeof(z));
@@ -252,5 +251,5 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	memset(f, 0, sizeof(f));
 	nstx_matrixMult1d2d(nZL, nUL, fTemp, F, f);
 
-	qp_solve(nUL, nU, G, P, Ac, rho, sigma, alpha, f, uMin, uMax, uHat, epsilon, nIter, uHat, lambda, 0);
+	qp_solve(nUL, nU, G, P, Ac, rho, sigma, alpha, f, uMin, uMax, epsilon, nIter, uHat, lambda);
 }

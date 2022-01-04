@@ -25,7 +25,7 @@ def qp_setup(P,A,rho,sigma):
     return np.linalg.inv(G)
 
 
-def qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, eps, maxiter, verbose=True):
+def qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, eps, maxiter, verbose=False):
     """Solve QP of the form
 
     min_x  1/2 x^T P x + q^T x
@@ -161,11 +161,6 @@ print()
 
 import ctypes
 import os
-# set up to call C function vep_box from python
-try: 
-    os.system("gcc -Wall -shared -fPIC -o libqp_solver.so qp_solver.c nstx_math.c -Ofast -march=native")
-except:
-    print("make sure you have a C99 compiler loaded, e.g. module load gcc7/default")
 libname=os.path.join(os.path.dirname(os.path.realpath(__file__)),
                      "libqp_solver.so")
 c_lib=ctypes.CDLL(libname)
@@ -182,20 +177,17 @@ c_lib.qp_solve.argtypes = [
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #q
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #l
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #u
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #x0
     ctypes.c_float, #eps
     ctypes.c_size_t, #maxiter
     # we want to change the value of an input array, so have to 
     # convert to a pointer (C passes by value, so we need to supply
     # an address to copy rather than an array of data)
     ctypes.POINTER(ctypes.c_double), #xOut
-    ctypes.POINTER(ctypes.c_double), #yOut
-    ctypes.POINTER(ctypes.c_double)] #r
+    ctypes.POINTER(ctypes.c_double)] #yOut
 c_lib.qp_solve.restype = ctypes.c_void_p #void return (answer goes into xOut)
 
-xout=np.zeros(len(q)).astype(np.float32)
-yout=np.zeros(len(A)).astype(np.float32)
-r=np.zeros(2).astype(np.float32)
+xout=x0.copy().astype(np.float32)
+yout=y0.copy().astype(np.float32)
 c_lib.qp_solve(len(q),
                len(A),
                G.astype(np.float32),
@@ -205,13 +197,33 @@ c_lib.qp_solve(len(q),
                q.astype(np.float32),
                l.astype(np.float32),
                u.astype(np.float32),
-               x0.astype(np.float32),
                eps, maxiter,
                xout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-               yout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-               r.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+               yout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 
-print("C implementation: ")
+print("C implementation of qp_solver: ")
 print("x=", xout)
 print("y=", yout)
-#print("r=", r)
+
+c_lib.qp_setup.argtypes = [
+    ctypes.c_size_t, #N
+    ctypes.c_size_t, #M
+    np.ctypeslib.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS'), #P
+    np.ctypeslib.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS'), #A
+    ctypes.c_float, #sigma
+    ctypes.c_float, #rho
+    # we want to change the value of an input array, so have to 
+    # convert to a pointer (C passes by value, so we need to supply
+    # an address to copy rather than an array of data)
+    ctypes.POINTER(ctypes.c_double)] #G
+
+G=np.zeros_like(P).astype(np.float32)
+c_lib.qp_setup(len(P),len(A),
+               P.astype(np.float32),A.astype(np.float32),
+               sigma,rho,
+               G.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+xf, yf, k, r_prim, r_dual = qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, eps, maxiter)
+
+print("C implementation of qp_setup: ")
+print("x=", xf)
+print("y=", yf)

@@ -28,4 +28,4 @@ $(LIB): qp_solver.o nstx_math.o
 
 qp_solver.o: qp_solver.h nstx_math.h
 
-nstx_math.c: nstx_math.h
+nstx_math.o: nstx_math.h

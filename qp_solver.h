@@ -50,6 +50,5 @@ void qp_solve(size_t const N, size_t const M,
 	      float const rho, float const sigma, float const alpha, 
 	      float const q[N], 
 	      float const l[M], float const u[M], 
-	      float const x0[N], 
 	      float const eps, size_t const maxiter,
-	      float xOut[N], float yOut[M], float r[2]);
+	      float xOut[N], float yOut[M]);
