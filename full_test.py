@@ -21,7 +21,7 @@ B=np.atleast_2d(np.array([0,1/m*delta_t])).T
 Q=np.array([[1,0],[0,1]])
 R=np.array([[1]])
 Nlook=3
-sigma=1.4
+sigma=1e-4 #1.4
 rho=0.1
 
 (E_python,F_python,P_python,G_python,
@@ -31,13 +31,13 @@ rho=0.1
 alpha=1.6
 epsilon=1e-4
 nIter=5
-z=np.array([1,0])
+z=np.array([0,0.01])
 r=np.array([0,0])
-uMin=np.array([-1])
-uMax=np.array([2])
+uMin=np.array([-20])
+uMax=np.array([20])
 uref=np.array([0])
-delta_uMin=np.array([-1])
-delta_uMax=np.array([1])
+delta_uMin=np.array([-20])
+delta_uMax=np.array([20])
 
 nu=1
 nx=2
@@ -52,7 +52,6 @@ u_uncontrolled=np.zeros(nu*num_sim_timesteps)
 
 X_MPC = np.zeros(nx*num_sim_timesteps)
 X_MPC[:nx]=z
-lamb=np.zeros(nu*(2*Nlook-1))
 u_MPC=np.zeros(nu*num_sim_timesteps)
 
 runtimes=[]

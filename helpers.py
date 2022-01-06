@@ -119,7 +119,7 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
     # F = [B 0 0 ...]
     #     [AB B 0 0 ...]
     #     [A^2B AB B 0 0 ...]
-    E = np.vstack([np.linalg.matrix_power(A, i + 1) for i in range(Nlook)])
+    E = np.hstack([np.linalg.matrix_power(A, i + 1) for i in range(Nlook)])
     F = []
     for i in range(Nlook):
         Frow = np.hstack(
@@ -151,7 +151,7 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
     # note in the spec H --> P    
     G = qp_setup(H,Aineq,rho,sigma)
 
-    return (E.T, F, H, G, Aineq, Qhat, Rhat)
+    return (E, F, H, G, Aineq, Qhat, Rhat)
 
 def mpc_solve(Nlook,
               r, z, uMin, uMax,

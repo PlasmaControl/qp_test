@@ -9,6 +9,7 @@ import time
 import matplotlib.pyplot as plt
 
 # set up to call C function vep_box from python
+'''
 libname=os.path.join(os.path.dirname(os.path.realpath(__file__)),
                      "libqp_solver.so")
 c_lib=ctypes.CDLL(libname)
@@ -25,7 +26,7 @@ c_lib.vep_box.argtypes = [
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #l
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS')] #u
 c_lib.vep_box.restype = ctypes.c_void_p #void return
-
+'''
 ### TEST 1 ###
 '''
 lamb=1
@@ -116,6 +117,7 @@ def get_u_mpc(x):
     qp.update(q=phi,l=l,u=u)
     results=qp.solve()
     return results.x[:nu]
+'''
 def get_u_mpc_pcs(x):
     phi=2*x.T@E.T@Qhat@F
     xout=np.ones(nu*horizon)
@@ -132,7 +134,7 @@ def get_u_mpc_pcs(x):
                   l.astype(np.float32), 
                   u.astype(np.float32))
     return xout[:nu]
-
+'''
 num_sim_timesteps=1000
 
 X_uncontrolled = np.zeros(nx*num_sim_timesteps)
@@ -156,7 +158,7 @@ for i in range(1,num_sim_timesteps):
     X_LQR[i*nx:(i+1)*nx] = A@X_LQR[(i-1)*nx:i*nx]+B@u_LQR[i*nu:(i+1)*nu]
 
     before_time=time.perf_counter()
-    u_MPC[i*nu:(i+1)*nu] = get_u_mpc_pcs(X_MPC[(i-1)*nx:i*nx])
+    u_MPC[i*nu:(i+1)*nu] = get_u_mpc(X_MPC[(i-1)*nx:i*nx])
     after_time=time.perf_counter()
     runtimes.append(after_time-before_time)
     X_MPC[i*nx:(i+1)*nx] = A@X_MPC[(i-1)*nx:i*nx]+B@u_MPC[i*nu:(i+1)*nu]
