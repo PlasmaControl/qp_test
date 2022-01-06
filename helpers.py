@@ -139,16 +139,38 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
     Aineq = np.vstack([Aineq_bound_u, Aineq_rate_u])
 
     # expand cost matrices
-    Qhat = [Q] * Nlook
-    Rhat = [R] * Nlook
+    Qhat = np.array([Q] * Nlook)
+    Rhat = np.array([R] * Nlook)
     
-    Qhat = linalg.block_diag(*Qhat)
-    Rhat = linalg.block_diag(*Rhat)
-
+    Qhat=linalg.block_diag(*Qhat)
+    Rhat=linalg.block_diag(*Rhat)
     H = F.T @ Qhat @ F + Rhat
     # symmetrize for accuracy
     H = (H + H.T) / 2
     lu = np.ones(Aineq.shape[0])
+    # note in the spec H --> P    
+    G = qp_setup(H,Aineq,rho,sigma)
 
-    # note in the spec H --> P
-    return (E, F, H, Aineq, Qhat, Rhat)
+    return (E.T, F, H, G, Aineq, Qhat, Rhat)
+
+def mpc_solve(Nlook,
+              r, z, uMin, uMax,
+              uref, delta_uMin, delta_uMax,
+              E, F, P, G, Ac, Qhat, Rhat,
+              rho, sigma, alpha, epsilon, nIter):
+    umin_hat = np.tile(uMin, (Nlook,))
+    delta_umin_hat = np.tile(delta_uMin, (Nlook-1,))
+    delta_umax_hat = np.tile(delta_uMax, (Nlook-1,))
+    umax_hat = np.tile(uMax, (Nlook,))
+    lower=np.concatenate([umin_hat,delta_umin_hat])
+    upper=np.concatenate([umax_hat,delta_umax_hat])
+    uref_hat = np.tile(uref, (Nlook,))
+    zref_hat = np.tile(r, (Nlook,))
+
+    f = (z @ E - zref_hat) @ Qhat @ F - Rhat @ uref_hat
+    x0=np.zeros(len(uref)*Nlook)
+    y0=np.zeros(Ac.shape[0])
+    
+    xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,x0,y0, epsilon, nIter)
+    return (xf, yf)
+

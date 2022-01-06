@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stddef.h> //for size_t
 #include <string.h>
+#include <stdio.h>
 
 void qp_setup(size_t const N, size_t const M, float const P[N][N], float const A[M][N], float const sigma, float const rho, float G[N][N]) {
 	float AT[N][M];
@@ -209,20 +210,24 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 }
 
 void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
-	       	size_t const rho, size_t const sigma, size_t const alpha, size_t const epsilon, size_t const nIter,
-		float const z[nZ],
-		float const r[nZ],
-		float const uMin[nU],
-		float const uMax[nU],
-		float const E[nZ][nZ * nLook],
-		float const F[nZ * nLook][nU * nLook],
-		float const P[nU * nLook][nU * nLook],
-		float const G[nU * nLook][nU * nLook],
-		float const Ac[nU * nLook][nU * nLook],
-		float const QHat[nZ * nLook],
-		float const RHat[nU * nLook],
-		float uHat[nU * nLook],
-		float lambda[nU * nLook]
+	       size_t const rho, size_t const sigma, size_t const alpha, 
+	       size_t const epsilon, size_t const nIter,
+	       float const z[nZ],
+	       float const r[nZ],
+	       float const uMin[nU],
+	       float const uMax[nU],
+	       float const deltauMin[nU],
+	       float const deltauMax[nU],
+	       float const uref[nU],
+	       float const E[nZ][nZ * nLook],
+	       float const F[nZ * nLook][nU * nLook],
+	       float const P[nU * nLook][nU * nLook],
+	       float const G[nU * nLook][nU * nLook],
+	       float const Ac[nU * (2*nLook-1)][nU * nLook],
+	       float const QHat[nZ * nLook],
+	       float const RHat[nU * nLook],
+	       float uHat[nU * nLook],
+	       float lambda[nU * nLook]
 	      ) {
 	size_t const nZL = nZ * nLook;
 	size_t const nUL = nU * nLook;
