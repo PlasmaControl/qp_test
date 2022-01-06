@@ -139,13 +139,16 @@ uMax=np.array([1])
 deltauMin=np.array([-1])
 deltauMax=np.array([1])
 uref=np.array([0])
+x0=np.zeros((nu*Nlook))
+y0=np.zeros((nu*(2*Nlook-1)))
 
 (xf,yf)=mpc_solve(Nlook,
                   r, z, uMin, uMax,
                   uref, deltauMin, deltauMax,
                   E_python, F_python, P_python, G_python, 
                   Ac_python, Qhat_python, Rhat_python,
-                  rho, sigma, alpha, epsilon, nIter)
+                  rho, sigma, alpha, epsilon, nIter,
+                  x0, y0)
 print('Python implementation:')
 print(f'xf: {xf}')
 print(f'yf: {yf}')
@@ -182,8 +185,8 @@ c_lib.qp_solve.restype = ctypes.c_void_p #void return (answer goes into xOut)
 
 nz=len(Q)
 nu=len(R)
-uHat=np.zeros((nu*Nlook)).astype(np.float32)
-lamb=np.zeros((nu*Nlook)).astype(np.float32)
+x0=x0.copy().astype(np.float32)
+y0=y0.copy().astype(np.float32)
 c_lib.mpc_solve(nz,
                 nu,
                 Nlook,
@@ -202,8 +205,8 @@ c_lib.mpc_solve(nz,
                 Ac.astype(np.float32),
                 Qhat.astype(np.float32),
                 Rhat.astype(np.float32),
-                uHat.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                lamb.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+                x0.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                y0.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 
 print('C full MPC solution:')
 print(uHat)
