@@ -3,3 +3,4 @@
 quick_test/*
 *.o
 *.so
+__pycache__

@@ -4,4 +4,5 @@ Before anything, be sure to
 `module load gcc7/default`
 
 Make edits to qp_solver.c's qp_solve function, then compare to the python implementation via
-`python3 qp_test.py`
+`make check_qp`
+`make check_mpc`

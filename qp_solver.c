@@ -142,18 +142,18 @@ void qp_solve(size_t const N, size_t const M,
 }
 
 void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
-		float const A[nZ][nZ],
-		float const B[nZ][nU],
-		float const Q[nZ][nZ],
-		float const R[nU][nU],
-		float const sigma, float const rho,
-		float E[nZ][nZ*nLook],
-		float F[nZ*nLook][nU*nLook],
-		float P[nU*nLook][nU*nLook],
-		float G[nU*nLook][nU*nLook],
-		float Ac[nU*nLook][nU*nLook],
-		float QHat[nZ*nLook],
-		float RHat[nU*nLook]
+	       float const A[nZ][nZ],
+	       float const B[nZ][nU],
+	       float const Q[nZ][nZ],
+	       float const R[nU][nU],
+	       float const sigma, float const rho, float const delta_t,
+	       float E[nZ][nZ*nLook],
+	       float F[nZ*nLook][nU*nLook],
+	       float P[nU*nLook][nU*nLook],
+	       float G[nU*nLook][nU*nLook],
+	       float Ac[nU*(2*nLook-1)][nU*nLook],
+	       float QHat[nZ*nLook],
+	       float RHat[nU*nLook]
 	      ) {
 	size_t const nZL = nZ * nLook;
 	size_t const nUL = nU * nLook;

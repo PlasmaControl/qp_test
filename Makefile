@@ -19,8 +19,12 @@ all: $(LIB)
 clean:
 	$(RM) $(LIB) qp_solver.o nstx_math.o
 
-.PHONY: check
-check: qp_test.py $(LIB)
+.PHONY: check_qp
+check_qp: qp_test.py $(LIB)
+	python3 $<
+
+.PHONY: check_mpc
+check_mpc: mpc_test.py $(LIB)
 	python3 $<
 
 $(LIB): qp_solver.o nstx_math.o
