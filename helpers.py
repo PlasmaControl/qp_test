@@ -141,9 +141,12 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
     # expand cost matrices
     Qhat = np.array([Q] * Nlook)
 
-    import scipy
-    lqr_P=scipy.linalg.solve_discrete_are(A,B,Q,R)    
-    Qhat[-1]=lqr_P #LQR to cut off the time
+    # we need the lqr addition for the mpc algo to work for control properly
+    # but keeping like this for now
+    if False:
+        import scipy
+        lqr_P=scipy.linalg.solve_discrete_are(A,B,Q,R)    
+        Qhat[-1]=lqr_P #LQR to cut off the time
 
     Rhat = np.array([R] * Nlook)
     
@@ -173,7 +176,11 @@ def mpc_solve(Nlook,
     uref_hat = np.tile(uref, (Nlook,))
     zref_hat = np.tile(r, (Nlook,))
 
-    f = 2*(z.T @ E.T - zref_hat) @ Qhat @ F - 2*Rhat @ uref_hat
+    # the 2* one is correct, but keeping it wrong to match the spec as it stands for now
+    if False:
+        f = 2* ( (z.T @ E.T - zref_hat) @ Qhat @ F - Rhat @ uref_hat )
+    else:
+        f = ( (z.T @ E.T - zref_hat) @ Qhat @ F - Rhat @ uref_hat )
     xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,x0,y0, epsilon, nIter)
     return (xf, yf)
 

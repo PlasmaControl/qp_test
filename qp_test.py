@@ -1,6 +1,5 @@
 import numpy as np
 import scipy
-import osqp
 import ctypes
 import os
 from helpers import *
@@ -82,18 +81,22 @@ print("G:")
 print(G_C)
 
 print("\n\n\n\n")
-qp=osqp.OSQP()
-qp.setup(P=scipy.sparse.csc_matrix(P),
-         q=q,
-         A=scipy.sparse.csc_matrix(A),
-         l=l,
-         u=u,
-         verbose=False)
-print("OSQP implementation of qp_solve: ")
-results = qp.solve()
-print("x=", results.x)
-print("y=", results.y)    
-print()
+try:
+    import osqp
+    qp=osqp.OSQP()
+    qp.setup(P=scipy.sparse.csc_matrix(P),
+             q=q,
+             A=scipy.sparse.csc_matrix(A),
+             l=l,
+             u=u,
+             verbose=False)
+    print("OSQP implementation of qp_solve: ")
+    results = qp.solve()
+    print("x=", results.x)
+    print("y=", results.y)    
+    print()
+except:
+    pass
 
 xf, yf, k, r_prim, r_dual = qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, eps, maxiter)
 print("Python implementation of qp_solve: ")
