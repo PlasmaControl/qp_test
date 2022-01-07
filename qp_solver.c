@@ -45,11 +45,6 @@ void qp_solve(size_t const N, size_t const M,
 
 	float const alpha1 = 1.0f - alpha;
 
-	float AT[N][M];
-	for (size_t i = 0; i < N; ++i)
-		for (size_t j = 0; j < M; ++j)
-			AT[i][j] = A[j][i];
-
 	float x[N];
 	for (size_t i = 0; i < N; ++i)
 		x[i] = xOut[i];
@@ -67,13 +62,13 @@ void qp_solve(size_t const N, size_t const M,
 		for (size_t j = 0; j < M; ++j)
 			rhoZ[j] = rho * z[j] - y[j];
 
-		float ATRhoZ[N];
-		memset(ATRhoZ, 0, sizeof(ATRhoZ));
-		nstx_matrixMult2d1d(N, M, AT, rhoZ, ATRhoZ);
+		float ARhoZ[N];
+		memset(ARhoZ, 0, sizeof(ARhoZ));
+		nstx_matrixMult1d2d(N, M, rhoZ, A, ARhoZ);
 
 		float w[N];
 		for (size_t j = 0; j < N; ++j)
-			w[j] = sigma * x[j] - q[j] + ATRhoZ[j];
+			w[j] = sigma * x[j] - q[j] + ARhoZ[j];
 
 		float xHat[N];
 		memset(xHat, 0, sizeof(xHat));
@@ -123,14 +118,14 @@ void qp_solve(size_t const N, size_t const M,
 	residual[0] = infNorm(M, resP);
 
 	float Px[N];
-	float ATy[N];
+	float yA[N];
 	float resD[N];
 	memset(Px, 0, sizeof(Px));
-	memset(ATy, 0, sizeof(ATy));
+	memset(yA, 0, sizeof(yA));
 	nstx_matrixMult2d1d(N, N, P, x, Px);
-	nstx_matrixMult2d1d(N, M, AT, y, ATy);
+	nstx_matrixMult1d2d(N, M, y, A, yA);
 	for (size_t i = 0; i < N; ++i)
-		resD[i] = Px[i] + q[i] + ATy[i];
+		resD[i] = Px[i] + q[i] + yA[i];
 	residual[1] = infNorm(N, resD);
 }
 
