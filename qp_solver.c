@@ -148,7 +148,7 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 	       float const Q[nZ][nZ],
 	       float const R[nU][nU],
 	       float const sigma, float const rho, float const deltaT,
-	       float E[nZ][nZ*nLook],
+	       float E[nZ*nLook][nZ],
 	       float F[nZ*nLook][nU*nLook],
 	       float P[nU*nLook][nU*nLook],
 	       float G[nU*nLook][nU*nLook],
@@ -163,14 +163,9 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 	float Atemp[nLook][nZ][nZ];
 	for (size_t i = 0; i < nZ; ++i)
 		for (size_t j = 0; j < nZ; ++j)
-			Atemp[0][i][j] = A[i][j];
+			E[i][j] = A[i][j];
 	for (size_t i = 1; i < nLook; ++i)
-		nstx_matrixMult2d2d(nZ, nZ, nZ, A, Atemp[i-1], Atemp[i]);
-
-	for (size_t i = 0; i < nLook; ++i)
-		for (size_t j = 0; j < nZ; ++j)
-			for (size_t k = 0; k < nZ; ++k)
-				E[j][k + i*nZ] = Atemp[i][j][k];
+		nstx_matrixMult2d2d(nZ, nZ, nZ, A, &E[i-1], &E[i]);
 
 	for (size_t i = 0; i < nLook; ++i)
 		for (size_t j = 0; j <= i; ++j) {
@@ -226,7 +221,7 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	       float const deltauMin[restrict nU],
 	       float const deltauMax[restrict nU],
 	       float const uref[restrict nU],
-	       float const E[restrict nZ][nZ * nLook],
+	       float const E[restrict nZ * nLook][nZ],
 	       float const F[restrict nZ * nLook][nU * nLook],
 	       float const P[restrict nU * nLook][nU * nLook],
 	       float const G[restrict nU * nLook][nU * nLook],
@@ -254,7 +249,7 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 
 	float fTemp[nZL];
 	memset(fTemp, 0, sizeof(fTemp));
-	nstx_matrixMult1d2d(nZ, nZL, z, E, fTemp);
+	nstx_matrixMult2d1d(nZL, nZ, E, z, fTemp);
 	for (size_t i = 0; i < nZL; ++i) {
 		fTemp[i] -= rHat[i];
 		fTemp[i] *= QHat[i];
