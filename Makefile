@@ -1,14 +1,25 @@
 CC := gcc
 LD := gcc
 LDFLAGS := -fPIC -shared
+CFLAGS := -fPIC
+
+WARN := -Wall -Wextra
+GDB := -ggdb3
+ASAN := -fsanitize=address
+#UBSAN := -fsanitize=undefined
 
 ifeq ($(DEBUG),1)
 OPT :=
+CFLAGS += $(ASAN)
+LDFLAGS += $(ASAN)
+CFLAGS += $(UBSAN)
+LDFLAGS += $(UBSAN)
 else
 OPT := -Ofast
 #OPT += -march=native
 endif
-CFLAGS := -Wall -fPIC $(OPT)
+
+CFLAGS += $(WARN) $(GDB) $(OPT)
 
 LIB := libqp_solver.so
 
