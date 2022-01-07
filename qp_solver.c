@@ -29,13 +29,13 @@ void qp_setup(size_t const N, size_t const M, float const P[N][N], float const A
 }
 
 void qp_solve(size_t const N, size_t const M,
-	      float const G[N][N], float const P[N][N], float const A[M][N], 
-	      float const rho, float const sigma, float const alpha, 
-	      float const q[N], 
-	      float const l[M], float const u[M], 
+	      float const G[restrict N][N], float const P[restrict N][N], float const A[restrict M][N],
+	      float const rho, float const sigma, float const alpha,
+	      float const q[restrict N],
+	      float const l[restrict M], float const u[restrict M],
 	      float const eps, size_t const nIter,
 	      float xOut[restrict N],
-	      float yOut[M]) {
+	      float yOut[restrict M]) {
 
 	float fastMax(float const a, float const b) {
 		// GCC isn't optimizing fmaxf correctly, so inline here
@@ -212,22 +212,22 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	       size_t const rho, size_t const sigma, size_t const alpha, 
 	       size_t const epsilon, size_t const nIter,
-	       float const z[nZ],
-	       float const r[nZ],
-	       float const uMin[nU],
-	       float const uMax[nU],
-	       float const deltauMin[nU],
-	       float const deltauMax[nU],
-	       float const uref[nU],
-	       float const E[nZ][nZ * nLook],
-	       float const F[nZ * nLook][nU * nLook],
-	       float const P[nU * nLook][nU * nLook],
-	       float const G[nU * nLook][nU * nLook],
-	       float const Ac[nU * (2*nLook-1)][nU * nLook],
-	       float const QHat[nZ * nLook],
-	       float const RHat[nU * nLook],
-	       float uHat[nU * nLook],
-	       float lambda[nU * nLook]
+	       float const z[restrict nZ],
+	       float const r[restrict nZ],
+	       float const uMin[restrict nU],
+	       float const uMax[restrict nU],
+	       float const deltauMin[restrict nU],
+	       float const deltauMax[restrict nU],
+	       float const uref[restrict nU],
+	       float const E[restrict nZ][nZ * nLook],
+	       float const F[restrict nZ * nLook][nU * nLook],
+	       float const P[restrict nU * nLook][nU * nLook],
+	       float const G[restrict nU * nLook][nU * nLook],
+	       float const Ac[restrict nU * (2*nLook-1)][nU * nLook],
+	       float const QHat[restrict nZ * nLook],
+	       float const RHat[restrict nU * nLook],
+	       float uHat[restrict nU * nLook],
+	       float lambda[restrict nU * nLook]
 	      ) {
 	size_t const nZL = nZ * nLook;
 	size_t const nUL = nU * nLook;
