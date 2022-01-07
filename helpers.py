@@ -176,11 +176,8 @@ def mpc_solve(Nlook,
     uref_hat = np.tile(uref, (Nlook,))
     zref_hat = np.tile(r, (Nlook,))
 
-    # the 2* one is correct, but keeping it wrong to match the spec as it stands for now
-    if False:
-        f = 2* ( (z.T @ E.T - zref_hat) @ Qhat @ F - Rhat @ uref_hat )
-    else:
-        f = ( (z.T @ E.T - zref_hat) @ Qhat @ F - Rhat @ uref_hat )
+    # note that factor of 2 to be consistent with how osqp/we define it
+    f = 2* ( (z.T @ E.T - zref_hat) @ Qhat @ F - Rhat @ uref_hat )
     xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,x0,y0, epsilon, nIter)
     return (xf, yf)
 

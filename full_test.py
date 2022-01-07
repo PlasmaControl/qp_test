@@ -14,13 +14,13 @@ A and B by delta_t, and add the identity to A
 '''
 m=1
 k=1
-b=0
+b=0.1
 delta_t=0.02
 A=np.array([[1,delta_t],[-k/m*delta_t,1-b/m*delta_t]])
 B=np.atleast_2d(np.array([0,1/m*delta_t])).T
 Q=np.array([[1.,0],[0,1]])
 R=np.array([[1.]])
-Nlook=3
+Nlook=10
 sigma=1e-4 #1.4
 rho=0.1
 
@@ -28,12 +28,11 @@ rho=0.1
  Ac_python,Qhat_python,Rhat_python)=mpc_setup(Nlook=Nlook, A=A, B=B, Q=Q, R=R, 
                                                  sigma=sigma, rho=rho, delta_t=delta_t)
 
-
 alpha=1.6
 epsilon=1e-4
 nIter=5
 z=np.array([0,0.01])
-r=np.array([1,0])
+r=np.array([0,0])
 uMin=np.array([-np.inf])
 uMax=np.array([np.inf])
 uref=np.array([0])
