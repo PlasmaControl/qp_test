@@ -16,11 +16,13 @@ m=1
 k=1
 b=0.1
 delta_t=0.02
+nu=1
+nx=2
 A=np.array([[1,delta_t],[-k/m*delta_t,1-b/m*delta_t]])
 B=np.atleast_2d(np.array([0,1/m*delta_t])).T
 Q=np.array([[1.,0],[0,1]])
 R=np.array([[1.]])
-Nlook=10
+Nlook=100
 sigma=1e-4 #1.4
 rho=0.1
 
@@ -30,28 +32,33 @@ rho=0.1
 
 alpha=1.6
 epsilon=1e-4
-nIter=5
-z=np.array([0,0.01])
-r=np.array([0,0])
-uMin=np.array([-np.inf])
-uMax=np.array([np.inf])
+nIter=10
 uref=np.array([0])
-delta_uMin=np.array([-np.inf])
-delta_uMax=np.array([np.inf])
+xref=np.array([0,0]) #target position 0, velocity 0
+umin=np.array([-0.005])
+umax=np.array([1])
+delta_umin=np.array([-1])
+delta_umax=np.array([1])
 
-nu=1
-nx=2
-u=np.zeros(nu*Nlook)
-lamb=np.zeros(nu*(2*Nlook-1))
+x=np.array([0,0.01]) #initial position 0, velocity 0
+u=np.zeros((nu*Nlook)) #initial guess for best control all 0
+lamb=np.zeros((nu*(2*Nlook-1))) #initial guess for Lagrangian forces 0
+
+uref_hat=np.tile(uref, (Nlook,))
+xref_hat = np.tile(xref, (Nlook,))
+umin_hat = np.tile(umin, (Nlook,))
+umax_hat = np.tile(umax, (Nlook,))
+delta_umin_hat = np.tile(delta_umin, (Nlook-1,))
+delta_umax_hat = np.tile(delta_umax, (Nlook-1,))
 
 num_sim_timesteps=1000
 
 X_uncontrolled = np.zeros(nx*num_sim_timesteps)
-X_uncontrolled[:nx]=z
+X_uncontrolled[:nx]=x
 u_uncontrolled=np.zeros(nu*num_sim_timesteps)
 
 X_MPC = np.zeros(nx*num_sim_timesteps)
-X_MPC[:nx]=z
+X_MPC[:nx]=x
 u_MPC=np.zeros(nu*num_sim_timesteps)
 
 runtimes=[]
@@ -61,17 +68,17 @@ for i in range(1,num_sim_timesteps):
     
     before_time=time.perf_counter()
     (u,lamb)=mpc_solve(Nlook,
-                       r, z, uMin, uMax,
-                       uref, delta_uMin, delta_uMax,
+                       xref_hat, x, umin_hat, umax_hat,
+                       uref_hat, delta_umin_hat, delta_umax_hat,
                        E_python, F_python, P_python, G_python, 
                        Ac_python, Qhat_python, Rhat_python,
                        rho, sigma, alpha, epsilon, nIter,
-                       u,lamb)
+                       u, lamb)
     after_time=time.perf_counter()
     runtimes.append(after_time-before_time)
     u_MPC[i*nu:(i+1)*nu]=u[:nu]
-    z=A@X_MPC[(i-1)*nx:i*nx]+B@u_MPC[i*nu:(i+1)*nu]
-    X_MPC[i*nx:(i+1)*nx]=z
+    x=A@X_MPC[(i-1)*nx:i*nx]+B@u_MPC[i*nu:(i+1)*nu]
+    X_MPC[i*nx:(i+1)*nx]=x
 
 if True:
     times=np.linspace(0,num_sim_timesteps*delta_t,num_sim_timesteps)
@@ -79,7 +86,7 @@ if True:
     for i in range(nx):
         axes[i].plot(times,X_uncontrolled[i::nx],label='uncontrolled')
         axes[i].plot(times,X_MPC[i::nx],label='MPC')
-        axes[i].axhline(r[i],linestyle='--',c='k')
+        axes[i].axhline(xref[i],linestyle='--',c='k')
     for i in range(nu):
         axes[i+nx].plot(times,u_uncontrolled[i::nu],label='uncontrolled')
         axes[i+nx].plot(times,u_MPC[i::nu],label='MPC')

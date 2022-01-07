@@ -162,22 +162,15 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
     return (E, F, H, G, Aineq, Qhat, Rhat)
 
 def mpc_solve(Nlook,
-              r, z, uMin, uMax,
-              uref, delta_uMin, delta_uMax,
+              xref_hat, x0, umin_hat, umax_hat,
+              uref_hat, delta_umin_hat, delta_umax_hat,
               E, F, P, G, Ac, Qhat, Rhat,
               rho, sigma, alpha, epsilon, nIter,
-              x0, y0):
-    umin_hat = np.tile(uMin, (Nlook,))
-    umax_hat = np.tile(uMax, (Nlook,))
-    delta_umin_hat = np.tile(delta_uMin, (Nlook-1,))
-    delta_umax_hat = np.tile(delta_uMax, (Nlook-1,))
+              u0, lamb0):
     lower=np.concatenate([umin_hat,delta_umin_hat])
     upper=np.concatenate([umax_hat,delta_umax_hat])
-    uref_hat = np.tile(uref, (Nlook,))
-    zref_hat = np.tile(r, (Nlook,))
-
     # note that factor of 2 to be consistent with how osqp/we define it
-    f = 2* ( (z.T @ E.T - zref_hat) @ Qhat @ F - Rhat @ uref_hat )
-    xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,x0,y0, epsilon, nIter)
+    f = 2* ( (x0.T @ E.T - xref_hat) @ Qhat @ F - Rhat @ uref_hat )
+    xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,u0,lamb0, epsilon, nIter)
     return (xf, yf)
 
