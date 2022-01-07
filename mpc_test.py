@@ -130,7 +130,6 @@ print()
 print('Testing full stack:')
 
 alpha=1.6
-epsilon=1e-4
 nIter=3
 uref=np.array([0])
 xref=np.array([0,0]) #target position 0, velocity 0
@@ -155,7 +154,7 @@ delta_umax_hat = np.tile(delta_umax, (Nlook-1,))
                   uref_hat, delta_umin_hat, delta_umax_hat,
                   E_python, F_python, P_python, G_python, 
                   Ac_python, Qhat_python, Rhat_python,
-                  rho, sigma, alpha, epsilon, nIter,
+                  rho, sigma, alpha, nIter,
                   u0, lamb0)
 print('Python implementation:')
 print(f'xf: {xf}')
@@ -168,7 +167,6 @@ c_lib.mpc_solve.argtypes = [
     ctypes.c_float, #rho
     ctypes.c_float, #sigma
     ctypes.c_float, #alpha
-    ctypes.c_float, #epsilon
     ctypes.c_float, #nIter
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #z
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #r
@@ -198,7 +196,7 @@ lamb0=lamb0.copy().astype(np.float32)
 c_lib.mpc_solve(nz,
                 nu,
                 Nlook,
-                rho, sigma, alpha, epsilon, nIter,
+                rho, sigma, alpha, nIter,
                 x0.astype(np.float32), 
                 xref_hat.astype(np.float32), 
                 umin_hat.astype(np.float32),

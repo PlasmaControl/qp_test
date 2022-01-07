@@ -47,7 +47,6 @@ sigma = 1e-6
 rho = 6
 alpha = 1.6
 maxiter=1000
-eps=1e-6
 
 G = qp_setup(P,A,rho,sigma)
 print("Python implementation of qp_setup:")
@@ -98,7 +97,7 @@ try:
 except:
     pass
 
-xf, yf, k, r_prim, r_dual = qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, eps, maxiter)
+xf, yf, k, r_prim, r_dual = qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, maxiter)
 print("Python implementation of qp_solve: ")
 print("x=", xf)
 print("y=", yf)
@@ -116,7 +115,6 @@ c_lib.qp_solve.argtypes = [
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #q
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #l
     np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #u
-    ctypes.c_float, #eps
     ctypes.c_size_t, #maxiter
     # we want to change the value of an input array, so have to 
     # convert to a pointer (C passes by value, so we need to supply
@@ -136,7 +134,7 @@ c_lib.qp_solve(len(q),
                q.astype(np.float32),
                l.astype(np.float32),
                u.astype(np.float32),
-               eps, maxiter,
+               maxiter,
                xout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
                yout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 

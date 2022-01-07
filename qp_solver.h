@@ -29,8 +29,6 @@
         initial guess for solution
     y0 : ndarray (m,)
         initial guess for lagrange multipliers
-    eps : float
-        stopping tolerance
     maxiter : int
         maximum number of iterations
     verbose : bool
@@ -53,9 +51,10 @@ void qp_solve(size_t const N, size_t const M,
 	      float const rho, float const sigma, float const alpha,
 	      float const q[restrict N],
 	      float const l[restrict M], float const u[restrict M],
-	      float const eps, size_t const nIter,
+	      size_t const nIter,
 	      float xOut[restrict N],
-	      float yOut[restrict M]);
+	      float yOut[restrict M],
+	      float residual[restrict 2]);
 
 void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 	       float const A[nZ][nZ],
@@ -73,7 +72,7 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 
 void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	       size_t const rho, size_t const sigma, size_t const alpha, 
-	       size_t const epsilon, size_t const nIter,
+	       size_t const nIter,
 	       float const z[restrict nZ],
 	       float const r[restrict nZ],
 	       float const uMin[restrict nU],

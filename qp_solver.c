@@ -33,25 +33,17 @@ void qp_solve(size_t const N, size_t const M,
 	      float const rho, float const sigma, float const alpha,
 	      float const q[restrict N],
 	      float const l[restrict M], float const u[restrict M],
-	      float const eps, size_t const nIter,
+	      size_t const nIter,
 	      float xOut[restrict N],
-	      float yOut[restrict M]) {
+	      float yOut[restrict M],
+	      float residual[restrict 2]) {
 
 	float fastMax(float const a, float const b) {
 		// GCC isn't optimizing fmaxf correctly, so inline here
 		return a > b? a : b;
 	}
 
-	float infNorm(size_t const N, float const v[N]) {
-		float temp = 0.0f;
-		for (size_t i = 0; i < N; ++i)
-			temp = fastMax(temp, fabsf(v[i]));
-		return temp;
-	}
-
 	float const alpha1 = 1.0f - alpha;
-
-	float const qNorm = infNorm(N, q);
 
 	float AT[N][M];
 	for (size_t i = 0; i < N; ++i)
@@ -110,36 +102,36 @@ void qp_solve(size_t const N, size_t const M,
 		for (size_t j = 0; j < N; ++j) x[j] = xNext[j];
 		for (size_t j = 0; j < M; ++j) y[j] = yNext[j];
 		for (size_t j = 0; j < M; ++j) z[j] = zNext[j];
-
-		continue;
-		float AXNext[M];
-		memset(AXNext, 0, sizeof(AXNext));
-		nstx_matrixMult2d1d(M, N, A, xNext, AXNext);
-		float const AXNextNorm = infNorm(M, AXNext);
-
-		float PXNext[N];
-		memset(PXNext, 0, sizeof(PXNext));
-		nstx_matrixMult2d1d(N, N, P, xNext, PXNext);
-		float const PXNextNorm = infNorm(N, PXNext);
-
-		float ATYNext[N];
-		memset(ATYNext, 0, sizeof(ATYNext));
-		nstx_matrixMult2d1d(N, M, AT, yNext, ATYNext);
-		float const ATYNextNorm = infNorm(N, ATYNext);
-
-		float const epsP = eps + eps * fastMax(AXNextNorm, zNextNorm);
-		float const epsD = eps + eps * fastMax(fastMax(PXNextNorm, ATYNextNorm), qNorm);
-
-		float rpVec[M];
-		for (size_t j = 0; j < M; ++j)
-			rpVec[j] = AXNext[j] - zNext[j];
-		float const rpNorm = infNorm(M, rpVec);
 	}
-
 	for (size_t i = 0; i < N; ++i)
 		xOut[i] = x[i];
 	for (size_t i = 0; i < M; ++i)
 		yOut[i] = y[i];
+
+	float infNorm(size_t const N, float const v[N]) {
+		float temp = 0.0f;
+		for (size_t i = 0; i < N; ++i)
+			temp = fastMax(temp, fabsf(v[i]));
+		return temp;
+	}
+
+	float resP[M];
+	memset(resP, 0, sizeof(resP));
+	nstx_matrixMult2d1d(M, N, A, x, resP);
+	for (size_t i = 0; i < M; ++i)
+		resP[i] -= z[i];
+	residual[0] = infNorm(M, resP);
+
+	float Px[N];
+	float ATy[N];
+	float resD[N];
+	memset(Px, 0, sizeof(Px));
+	memset(ATy, 0, sizeof(ATy));
+	nstx_matrixMult2d1d(N, N, P, x, Px);
+	nstx_matrixMult2d1d(N, M, AT, y, ATy);
+	for (size_t i = 0; i < N; ++i)
+		resD[i] = Px[i] + q[i] + ATy[i];
+	residual[1] = infNorm(N, resD);
 }
 
 void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
@@ -213,7 +205,7 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 
 void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	       size_t const rho, size_t const sigma, size_t const alpha, 
-	       size_t const epsilon, size_t const nIter,
+	       size_t const nIter,
 	       float const z[restrict nZ],
 	       float const r[restrict nZ],
 	       float const uMin[restrict nU],
@@ -258,5 +250,6 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	memset(f, 0, sizeof(f));
 	nstx_matrixMult1d2d(nZL, nUL, fTemp, F, f);
 
-	qp_solve(nUL, nU, G, P, Ac, rho, sigma, alpha, f, uMin, uMax, epsilon, nIter, uHat, lambda);
+	float residual[2] = {0};
+	qp_solve(nUL, nU, G, P, Ac, rho, sigma, alpha, f, uMin, uMax, nIter, uHat, lambda, residual);
 }
