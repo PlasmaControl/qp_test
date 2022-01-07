@@ -119,7 +119,7 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
     # F = [B 0 0 ...]
     #     [AB B 0 0 ...]
     #     [A^2B AB B 0 0 ...]
-    E = np.hstack([np.linalg.matrix_power(A, i + 1) for i in range(Nlook)])
+    E = np.vstack([np.linalg.matrix_power(A, i + 1) for i in range(Nlook)])
     F = []
     for i in range(Nlook):
         Frow = np.hstack(
@@ -140,6 +140,11 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
 
     # expand cost matrices
     Qhat = np.array([Q] * Nlook)
+
+    import scipy
+    lqr_P=scipy.linalg.solve_discrete_are(A,B,Q,R)    
+    Qhat[-1]=lqr_P #LQR to cut off the time
+
     Rhat = np.array([R] * Nlook)
     
     Qhat=linalg.block_diag(*Qhat)
@@ -160,16 +165,15 @@ def mpc_solve(Nlook,
               rho, sigma, alpha, epsilon, nIter,
               x0, y0):
     umin_hat = np.tile(uMin, (Nlook,))
+    umax_hat = np.tile(uMax, (Nlook,))
     delta_umin_hat = np.tile(delta_uMin, (Nlook-1,))
     delta_umax_hat = np.tile(delta_uMax, (Nlook-1,))
-    umax_hat = np.tile(uMax, (Nlook,))
     lower=np.concatenate([umin_hat,delta_umin_hat])
     upper=np.concatenate([umax_hat,delta_umax_hat])
     uref_hat = np.tile(uref, (Nlook,))
     zref_hat = np.tile(r, (Nlook,))
 
-    f = (z @ E - zref_hat) @ Qhat @ F - Rhat @ uref_hat
-    
+    f = 2*(z.T @ E.T - zref_hat) @ Qhat @ F - 2*Rhat @ uref_hat
     xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,x0,y0, epsilon, nIter)
     return (xf, yf)
 

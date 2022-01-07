@@ -18,8 +18,8 @@ b=0
 delta_t=0.02
 A=np.array([[1,delta_t],[-k/m*delta_t,1-b/m*delta_t]])
 B=np.atleast_2d(np.array([0,1/m*delta_t])).T
-Q=np.array([[1,0],[0,1]])
-R=np.array([[1]])
+Q=np.array([[1.,0],[0,1]])
+R=np.array([[1.]])
 Nlook=3
 sigma=1e-4 #1.4
 rho=0.1
@@ -28,16 +28,17 @@ rho=0.1
  Ac_python,Qhat_python,Rhat_python)=mpc_setup(Nlook=Nlook, A=A, B=B, Q=Q, R=R, 
                                                  sigma=sigma, rho=rho, delta_t=delta_t)
 
+
 alpha=1.6
 epsilon=1e-4
 nIter=5
 z=np.array([0,0.01])
-r=np.array([0,0])
-uMin=np.array([-20])
-uMax=np.array([20])
+r=np.array([1,0])
+uMin=np.array([-np.inf])
+uMax=np.array([np.inf])
 uref=np.array([0])
-delta_uMin=np.array([-20])
-delta_uMax=np.array([20])
+delta_uMin=np.array([-np.inf])
+delta_uMax=np.array([np.inf])
 
 nu=1
 nx=2
@@ -66,22 +67,24 @@ for i in range(1,num_sim_timesteps):
                        E_python, F_python, P_python, G_python, 
                        Ac_python, Qhat_python, Rhat_python,
                        rho, sigma, alpha, epsilon, nIter,
-                       u,
-                       lamb)
-    u_MPC[i*nu:(i+1)*nu]=u[:nu]
+                       u,lamb)
     after_time=time.perf_counter()
     runtimes.append(after_time-before_time)
-    X_MPC[i*nx:(i+1)*nx] = A@X_MPC[(i-1)*nx:i*nx]+B@u_MPC[i*nu:(i+1)*nu]
+    u_MPC[i*nu:(i+1)*nu]=u[:nu]
+    z=A@X_MPC[(i-1)*nx:i*nx]+B@u_MPC[i*nu:(i+1)*nu]
+    X_MPC[i*nx:(i+1)*nx]=z
 
-times=np.linspace(0,num_sim_timesteps*delta_t,num_sim_timesteps)
-fig,axes=plt.subplots(nx+nu,sharex=True)
-for i in range(nx):
-    axes[i].plot(times,X_uncontrolled[i::nx],label='uncontrolled')
-    axes[i].plot(times,X_MPC[i::nx],label='MPC')
-for i in range(nu):
-    axes[i+nx].plot(times,u_uncontrolled[i::nu],label='uncontrolled')
-    axes[i+nx].plot(times,u_MPC[i::nu],label='MPC')
-axes[0].set_title('States')
-axes[nx].set_title('Controls')
-plt.legend()
-plt.show()
+if True:
+    times=np.linspace(0,num_sim_timesteps*delta_t,num_sim_timesteps)
+    fig,axes=plt.subplots(nx+nu,sharex=True)
+    for i in range(nx):
+        axes[i].plot(times,X_uncontrolled[i::nx],label='uncontrolled')
+        axes[i].plot(times,X_MPC[i::nx],label='MPC')
+        axes[i].axhline(r[i],linestyle='--',c='k')
+    for i in range(nu):
+        axes[i+nx].plot(times,u_uncontrolled[i::nu],label='uncontrolled')
+        axes[i+nx].plot(times,u_MPC[i::nu],label='MPC')
+    axes[0].set_title('States')
+    axes[nx].set_title('Controls')
+    plt.legend()
+    plt.show()
