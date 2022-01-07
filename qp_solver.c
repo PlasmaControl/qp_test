@@ -202,7 +202,7 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	       size_t const rho, size_t const sigma, size_t const alpha, 
 	       size_t const nIter,
 	       float const z[restrict nZ],
-	       float const r[restrict nZ],
+	       float const rHat[restrict nZ * nLook],
 	       float const uMin[restrict nU],
 	       float const uMax[restrict nU],
 	       float const deltauMin[restrict nU],
@@ -220,11 +220,6 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	      ) {
 	size_t const nZL = nZ * nLook;
 	size_t const nUL = nU * nLook;
-
-	float rHat[nZL];
-	for (size_t i = 0; i < nLook; ++i)
-		for (size_t j = 0; j < nZ; ++j)
-			rHat[i * nZ + j] = r[j];
 
 	float uHatMin[nUL];
 	float uHatMax[nUL];
