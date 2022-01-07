@@ -147,7 +147,7 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 	       float const B[nZ][nU],
 	       float const Q[nZ][nZ],
 	       float const R[nU][nU],
-	       float const sigma, float const rho, float const delta_t,
+	       float const sigma, float const rho, float const deltaT,
 	       float E[nZ][nZ*nLook],
 	       float F[nZ*nLook][nU*nLook],
 	       float P[nU*nLook][nU*nLook],
@@ -158,6 +158,7 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 	      ) {
 	size_t const nZL = nZ * nLook;
 	size_t const nUL = nU * nLook;
+	size_t const nUL2 = nU * (2 * nLook - 1);
 
 	float Atemp[nLook][nZ][nZ];
 	for (size_t i = 0; i < nZ; ++i)
@@ -205,8 +206,14 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 	for (size_t i = 0; i < nUL; ++i)
 		for (size_t j = 0; j < nUL; ++j)
 			Ac[i][j] = (i == j)? 1.0f : 0.0f;
+	for (size_t i = nUL; i < nUL2; ++i)
+		for (size_t j = 0; j < nUL; ++j)
+			Ac[i][j] =
+				(j == i)? -1.0f / deltaT :
+				(j == nU + i - nUL)? 1.0f / deltaT :
+				0.0f;
 
-	qp_setup(nUL, nUL, P, Ac, sigma, rho, G);
+	qp_setup(nUL, nUL2, P, Ac, sigma, rho, G);
 }
 
 void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
@@ -223,7 +230,7 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	       float const F[restrict nZ * nLook][nU * nLook],
 	       float const P[restrict nU * nLook][nU * nLook],
 	       float const G[restrict nU * nLook][nU * nLook],
-	       float const Ac[restrict nU * (2*nLook-1)][nU * nLook],
+	       float const Ac[restrict nU * (2 * nLook - 1)][nU * nLook],
 	       float const QHat[restrict nZ * nLook],
 	       float const RHat[restrict nU * nLook],
 	       float uHat[restrict nU * nLook],
