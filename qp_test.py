@@ -2,7 +2,8 @@ import numpy as np
 import scipy
 import ctypes
 import os
-from helpers import *
+import mpc_qp_helpers
+import python_c_helpers
 
 """problem dimensions"""
 n = 5 # number of variables
@@ -46,34 +47,14 @@ y0 = np.zeros(m)
 sigma = 1e-6
 rho = 6
 alpha = 1.6
-maxiter=1000
+maxiter=3
 
-G = qp_setup(P,A,rho,sigma)
+G = mpc_qp_helpers.qp_setup(P,A,rho,sigma)
 print("Python implementation of qp_setup:")
 print("G:")
 print(G)
 
-libname=os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                     "libqp_solver.so")
-c_lib=ctypes.CDLL(libname)
-
-c_lib.qp_setup.argtypes = [
-    ctypes.c_size_t, #N
-    ctypes.c_size_t, #M
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS'), #P
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS'), #A
-    ctypes.c_float, #sigma
-    ctypes.c_float, #rho
-    # we want to change the value of an input array, so have to 
-    # convert to a pointer (C passes by value, so we need to supply
-    # an address to copy rather than an array of data)
-    ctypes.POINTER(ctypes.c_double)] #G
-
-G_C=np.zeros_like(P).astype(np.float32)
-c_lib.qp_setup(len(P),len(A),
-               P.astype(np.float32),A.astype(np.float32),
-               sigma,rho,
-               G_C.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+G_C=python_c_helpers.qp_setup(P,A,rho,sigma)
 
 print("C implementation of qp_setup:")
 print("G:")
@@ -92,44 +73,34 @@ try:
     print("OSQP implementation of qp_solve: ")
     results = qp.solve()
     print("x=", results.x)
-    print("y=", results.y)    
+    print("y=", results.y)
+    print("residual=",[results.info.pri_res,results.info.dua_res])
     print()
 except:
     pass
 
-xf, yf, k, r_prim, r_dual = qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0,maxiter)
+xf, yf, k, r_prim, r_dual = mpc_qp_helpers.qp_solve(G,P,A,rho,sigma,alpha,
+                                                    q,l,u,x0,y0,maxiter)
 print("Python implementation of qp_solve: ")
 print("x=", xf)
 print("y=", yf)
+print("residual=",[r_prim,r_dual])
 print()
 
-c_lib.qp_solve.argtypes = [
-    ctypes.c_size_t, #N
-    ctypes.c_size_t, #M
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS'), #G
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS'), #P
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS'), #A
-    ctypes.c_float, #rho    
-    ctypes.c_float, #sigma
-    ctypes.c_float, #alpha
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #q
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #l
-    np.ctypeslib.ndpointer(dtype=np.float32, ndim=1, flags='C_CONTIGUOUS'), #u
-    ctypes.c_size_t, #maxiter
-    # we want to change the value of an input array, so have to 
-    # convert to a pointer (C passes by value, so we need to supply
-    # an address to copy rather than an array of data)
-    ctypes.POINTER(ctypes.c_double), #xOut
-    ctypes.POINTER(ctypes.c_double), #yOut
-    ctypes.POINTER(ctypes.c_double)] #residual
-c_lib.qp_solve.restype = ctypes.c_void_p #void return (answer goes into xOut)
+xf, yf, residual = python_c_helpers.qp_solve(G,P,A,rho,sigma,alpha,
+                                             q,l,u,x0,y0,maxiter)
+print("C implementation of qp_solver, with Python's G matrix: ")
+print("x=", xf)
+print("y=", yf)
+print("residual=", residual)
 
+'''
 xout=x0.copy().astype(np.float32)
 yout=y0.copy().astype(np.float32)
-residual=np.zeros(len(yout)).astype(np.float32)
+residual=np.zeros(2).astype(np.float32)
 c_lib.qp_solve(len(q),
                len(A),
-               G.astype(np.float32),
+               G_C.astype(np.float32),
                P.astype(np.float32),
                A.astype(np.float32),
                rho, sigma, alpha,
@@ -137,11 +108,12 @@ c_lib.qp_solve(len(q),
                l.astype(np.float32),
                u.astype(np.float32),
                maxiter,
-               xout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-               yout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-               residual.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+               xout.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+               yout.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+               residual.ctypes.data_as(ctypes.POINTER(ctypes.c_float)))
 
-print("C implementation of qp_solver: ")
+print("C implementation of qp_solver, with C's G matrix: ")
 print("x=", xout)
 print("y=", yout)
 print("residual=", residual)
+'''

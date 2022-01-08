@@ -80,7 +80,7 @@ def qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, maxiter, eps=1e-4,verbose=False)
     eps_prim = eps
     eps_dual = eps
     k = 1
-    while (k<maxiter):
+    while (k<=maxiter):
         k += 1
         w = sigma*xk - q + A.T @ (rho*zk-yk)
         xhk1 = G @ w
@@ -173,4 +173,3 @@ def mpc_solve(Nlook,
     f = 2* ( (x0.T @ E.T - xref_hat) @ Qhat @ F - Rhat @ uref_hat )
     xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,u0,lamb0, nIter)
     return (xf, yf)
-

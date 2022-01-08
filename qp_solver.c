@@ -260,16 +260,45 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 }
 
 
-#define NZ 2
-#define NU 1
+#define N 5
+#define M 4
 #define NLOOK 3
 int main () {
-	size_t nZ = NZ;
-	size_t nU = NU;
-	size_t nLook = NLOOK;
-	float sigma = 1.4f;
-	float rho = 0.1;
-	float deltaT = 0.02f;
+	float P[N][N] = {{1.63729889f, 1.49800623f, 0.66972223f, 1.16520369f, 1.00871733f},
+			 {1.49800623f, 2.30753699f, 1.00125695f, 1.29220823f, 1.59194631f},
+			 {0.66972223f, 1.00125695f, 1.16973938f, 0.60180993f, 0.81632789f},
+			 {1.16520369f, 1.29220823f, 0.60180993f, 1.33521535f, 1.24619392f},
+			 {1.00871733f, 1.59194631f, 0.81632789f, 1.24619392f, 1.4141925f }};
+	float A[M][N] = {{1.f, 0.f, 0.f, 0.f, 0.f},
+			 {0.f, 1.f, 0.f, 0.f, 0.f},
+			 {0.f, 0.f, 1.f, 0.f, 0.f},
+			 {0.f, 0.f, 0.f, 1.f, 0.f}};
+
+	float q[N] = {0.87613838f, 0.7393823f,  0.55419765f, 0.59420561f, 0.26704384f};
+	float l[M] = {-0.37471228f, -0.80018154f, -0.47095637f, -0.11762543f};
+	float u[M] = {0.21614515f, 0.50421568f, 0.35092037f, 0.95366794f};
+
+	float x0[N] = {0};
+	float y0[M] = {0};
+	float residual[2] = {0};
+
+	float sigma = 1.e-6;
+	float rho = 6.f;
+	float alpha = 1.6f;
+	size_t maxiter=3;
+
+	float G[N][N] = {0};
+
+	qp_setup(N, M, P, A, sigma, rho, G);
+	qp_solve(N, M, G, P, A, rho, sigma, alpha, q, l, u, maxiter, x0, y0, residual);
+
+	printf("Compare to running python qp_test.py:\n");
+	pMat("G",N,N,G);
+	pVec("x0",N,x0);
+	pVec("y0",M,y0);
+	pVec("residual",2,residual);
+}
+	/*
 	float A[NZ][NZ] = {
 		{ 1.f, 0.02f},
 		{-0.02f, 1.f}
@@ -341,3 +370,4 @@ int main () {
 
 	return 0;
 }
+	*/

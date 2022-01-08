@@ -39,6 +39,10 @@ check_qp: qp_test.py $(LIB)
 check_mpc: mpc_test.py $(LIB)
 	python3 $<
 
+.PHONY: check_full
+check_full: full_test.py $(LIB)
+	python3 $<
+
 .PHONY: check
 check: $(PROG)
 	./$(PROG)
