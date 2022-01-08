@@ -97,7 +97,7 @@ try:
 except:
     pass
 
-xf, yf, k, r_prim, r_dual = qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, maxiter)
+xf, yf, k, r_prim, r_dual = qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0,maxiter)
 print("Python implementation of qp_solve: ")
 print("x=", xf)
 print("y=", yf)
@@ -120,11 +120,13 @@ c_lib.qp_solve.argtypes = [
     # convert to a pointer (C passes by value, so we need to supply
     # an address to copy rather than an array of data)
     ctypes.POINTER(ctypes.c_double), #xOut
-    ctypes.POINTER(ctypes.c_double)] #yOut
+    ctypes.POINTER(ctypes.c_double), #yOut
+    ctypes.POINTER(ctypes.c_double)] #residual
 c_lib.qp_solve.restype = ctypes.c_void_p #void return (answer goes into xOut)
 
 xout=x0.copy().astype(np.float32)
 yout=y0.copy().astype(np.float32)
+residual=np.zeros(len(yout)).astype(np.float32)
 c_lib.qp_solve(len(q),
                len(A),
                G.astype(np.float32),
@@ -136,8 +138,10 @@ c_lib.qp_solve(len(q),
                u.astype(np.float32),
                maxiter,
                xout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-               yout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+               yout.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+               residual.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 
 print("C implementation of qp_solver: ")
 print("x=", xout)
 print("y=", yout)
+print("residual=", residual)

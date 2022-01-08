@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import time
 from helpers import *
 
+num_sim_timesteps=1000
+
+##### START SYSTEM SETUP #####
 '''
 For a spring with mass m, spring constant k, damping b,
 positive force u:
@@ -26,10 +29,6 @@ Nlook=100
 sigma=1e-4 #1.4
 rho=0.1
 
-(E_python,F_python,P_python,G_python,
- Ac_python,Qhat_python,Rhat_python)=mpc_setup(Nlook=Nlook, A=A, B=B, Q=Q, R=R, 
-                                                 sigma=sigma, rho=rho, delta_t=delta_t)
-
 alpha=1.6
 epsilon=1e-4
 nIter=10
@@ -43,6 +42,12 @@ delta_umax=np.array([1])
 x=np.array([0,0.01]) #initial position 0, velocity 0
 u=np.zeros((nu*Nlook)) #initial guess for best control all 0
 lamb=np.zeros((nu*(2*Nlook-1))) #initial guess for Lagrangian forces 0
+##### END SYSTEM SETUP #####
+
+
+(E_python,F_python,P_python,G_python,
+ Ac_python,Qhat_python,Rhat_python)=mpc_setup(Nlook=Nlook, A=A, B=B, Q=Q, R=R, 
+                                              sigma=sigma, rho=rho, delta_t=delta_t)
 
 uref_hat=np.tile(uref, (Nlook,))
 xref_hat = np.tile(xref, (Nlook,))
@@ -50,8 +55,6 @@ umin_hat = np.tile(umin, (Nlook,))
 umax_hat = np.tile(umax, (Nlook,))
 delta_umin_hat = np.tile(delta_umin, (Nlook-1,))
 delta_umax_hat = np.tile(delta_umax, (Nlook-1,))
-
-num_sim_timesteps=1000
 
 X_uncontrolled = np.zeros(nx*num_sim_timesteps)
 X_uncontrolled[:nx]=x
@@ -63,7 +66,7 @@ u_MPC=np.zeros(nu*num_sim_timesteps)
 
 runtimes=[]
 for i in range(1,num_sim_timesteps):
-    u_uncontrolled[i*nu:(i+1)*nu] = 0
+    u_uncontrolled[i*nu:(i+1)*nu] = uref
     X_uncontrolled[i*nx:(i+1)*nx] = A@X_uncontrolled[(i-1)*nx:i*nx]+B@u_uncontrolled[i*nu:(i+1)*nu]
     
     before_time=time.perf_counter()

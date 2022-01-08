@@ -25,7 +25,7 @@ def qp_setup(P,A,rho,sigma):
     return np.linalg.inv(G)
 
 
-def qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, eps, maxiter, verbose=False):
+def qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, maxiter, eps=1e-4,verbose=False):
     """Solve QP of the form
 
     min_x  1/2 x^T P x + q^T x
@@ -101,7 +101,7 @@ def qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0, eps, maxiter, verbose=False):
             if verbose:
                 print("{:4d}   {:.3e}   {:.3e}".format(k, r_prim, r_dual))
             if ((r_prim < eps_prim) and (r_dual < eps_dual)):
-                break
+                continue #break
     return xk, yk, k, r_prim, r_dual
 
 def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
@@ -165,12 +165,12 @@ def mpc_solve(Nlook,
               xref_hat, x0, umin_hat, umax_hat,
               uref_hat, delta_umin_hat, delta_umax_hat,
               E, F, P, G, Ac, Qhat, Rhat,
-              rho, sigma, alpha, epsilon, nIter,
+              rho, sigma, alpha, nIter,
               u0, lamb0):
     lower=np.concatenate([umin_hat,delta_umin_hat])
     upper=np.concatenate([umax_hat,delta_umax_hat])
     # note that factor of 2 to be consistent with how osqp/we define it
     f = 2* ( (x0.T @ E.T - xref_hat) @ Qhat @ F - Rhat @ uref_hat )
-    xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,u0,lamb0, epsilon, nIter)
+    xf, yf, k, r_prim, r_dual = qp_solve(G,P,Ac,rho,sigma,alpha,f,lower,upper,u0,lamb0, nIter)
     return (xf, yf)
 

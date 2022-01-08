@@ -187,7 +187,7 @@ c_lib.mpc_solve.argtypes = [
     # an address to copy rather than an array of data)
     ctypes.POINTER(ctypes.c_double), #uHat
     ctypes.POINTER(ctypes.c_double)] #lambda
-c_lib.qp_solve.restype = ctypes.c_void_p #void return (answer goes into xOut)
+c_lib.mpc_solve.restype = ctypes.c_void_p #void return (answer goes into xOut)
 
 nz=len(Q)
 nu=len(R)
