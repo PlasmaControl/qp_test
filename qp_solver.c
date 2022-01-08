@@ -203,11 +203,11 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	       size_t const nIter,
 	       float const z[restrict nZ],
 	       float const rHat[restrict nZ * nLook],
-	       float const uMin[restrict nU],
-	       float const uMax[restrict nU],
-	       float const deltauMin[restrict nU],
-	       float const deltauMax[restrict nU],
-	       float const uref[restrict nU],
+	       float const uHatMin[restrict nU * nLook],
+	       float const uHatMax[restrict nU * nLook],
+	       float const uHatMinDelta[restrict nU * (nLook - 1)],
+	       float const uHatMaxDelta[restrict nU * (nLook - 1)],
+	       float const uHatRef[restrict nU * nLook],
 	       float const E[restrict nZ * nLook][nZ],
 	       float const F[restrict nZ * nLook][nU * nLook],
 	       float const P[restrict nU * nLook][nU * nLook],
@@ -216,30 +216,37 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	       float const QHat[restrict nZ * nLook],
 	       float const RHat[restrict nU * nLook],
 	       float uHat[restrict nU * nLook],
-	       float lambda[restrict nU * nLook]
+	       float lambda[restrict nU * (2 * nLook - 1)]
 	      ) {
 	size_t const nZL = nZ * nLook;
 	size_t const nUL = nU * nLook;
+	size_t const nUL2 = nU * (2 * nLook - 1);
 
-	float uHatMin[nUL];
-	float uHatMax[nUL];
-	for (size_t i = 0; i < nLook; ++i)
-		for (size_t j = 0; j < nU; ++j) {
-			uHatMin[i * nU + j] = uMin[j];
-			uHatMax[i * nU + j] = uMin[j];
-		}
+	float lower[nUL2];
+	float upper[nUL2];
+	for (size_t i = 0; i < nUL; ++i) {
+		lower[i] = uHatMin[i];
+		upper[i] = uHatMax[i];
+	}
+	for (size_t i = nUL; i < nUL2; ++i) {
+		lower[i] = uHatMinDelta[i - nUL];
+		upper[i] = uHatMaxDelta[i - nUL];
+	}
 
 	float fTemp[nZL];
 	memset(fTemp, 0, sizeof(fTemp));
 	nstx_matrixMult2d1d(nZL, nZ, E, z, fTemp);
 	for (size_t i = 0; i < nZL; ++i) {
 		fTemp[i] -= rHat[i];
-		fTemp[i] *= QHat[i];
+		fTemp[i] *= QHat[i] * 2.0f;
 	}
+
 	float f[nUL];
 	memset(f, 0, sizeof(f));
 	nstx_matrixMult1d2d(nZL, nUL, fTemp, F, f);
+	for (size_t i = 0; i < nUL; ++i)
+		f[i] -= RHat[i] * uHatRef[i];
 
 	float residual[2] = {0};
-	qp_solve(nUL, nU, G, P, Ac, rho, sigma, alpha, f, uMin, uMax, nIter, uHat, lambda, residual);
+	qp_solve(nUL, nU, G, P, Ac, rho, sigma, alpha, f, lower, upper, nIter, uHat, lambda, residual);
 }
