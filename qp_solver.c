@@ -5,6 +5,22 @@
 #include <string.h>
 #include <stdio.h>
 
+void pVec(char const * name, size_t const N, float x[N]) {
+	printf("Vec %s:\n", name);
+	for (size_t i = 0; i < N; ++i)
+		printf("%f\t", x[i]);
+	printf("\n");
+}
+
+void pMat(char const * name, size_t const X, size_t const Y, float x[X][Y]) {
+	printf("Mat %s:\n", name);
+	for (size_t i = 0; i < X; ++i) {
+		for (size_t j = 0; j < Y; ++j)
+			printf("%f\t", x[i][j]);
+		printf("\n");
+	}
+}
+
 void qp_setup(size_t const N, size_t const M, float const P[N][N], float const A[M][N], float const sigma, float const rho, float G[N][N]) {
 	float AT[N][M];
 	for (size_t i = 0; i < N; ++i)
@@ -241,4 +257,87 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 
 	float residual[2] = {0};
 	qp_solve(nUL, nUL2, G, P, Ac, rho, sigma, alpha, f, lower, upper, nIter, uHat, lambda, residual);
+}
+
+
+#define NZ 2
+#define NU 1
+#define NLOOK 3
+int main () {
+	size_t nZ = NZ;
+	size_t nU = NU;
+	size_t nLook = NLOOK;
+	float sigma = 1.4f;
+	float rho = 0.1;
+	float deltaT = 0.02f;
+	float A[NZ][NZ] = {
+		{ 1.f, 0.02f},
+		{-0.02f, 1.f}
+	};
+	float B[NZ][NU] = {
+		{0.f  },
+		{0.02f}
+	};
+	float Q[NZ][NZ] = {
+		{1.0f},
+		{0.0f,1.0f}
+	};
+	float R[NU][NU] = {
+		{1.0f}
+	};
+
+	float E[NZ*NLOOK][NZ] = {0};
+	float F[NZ*NLOOK][NU*NLOOK] = {0};
+	float P[NU*NLOOK][NU*NLOOK] = {0};
+	float G[NU*NLOOK][NU*NLOOK] = {0};
+	float Ac[NU*(2*NLOOK-1)][NU*NLOOK] = {0};
+	float QHat[NZ*NLOOK] = {0};
+	float RHat[NU*NLOOK] = {0};
+
+	mpc_setup(nZ, nU, nLook, A, B, Q, R, sigma, rho, deltaT, E, F, P, G, Ac, QHat, RHat);
+
+	pMat("A", NZ, NZ, A);
+	pMat("B", NZ, NU, B);
+	pMat("Q", NZ, NZ, Q);
+	pMat("R", NU, NU, R);
+	pMat("E", nZ*nLook, NZ, E);
+	pMat("F", nZ*nLook, nU*nLook, F);
+	pMat("P", nU*nLook, nU*nLook, P);
+	pMat("G", nU*nLook, nU*nLook, G);
+	pMat("Ac", nU*(2*nLook-1), nU*nLook, Ac);
+	pVec("QHat", nZ*nLook, QHat);
+	pVec("RHat", nU*nLook, RHat);
+
+	float alpha = 1.6f;
+	size_t nIter = 3;
+	float z[NZ] = { 0.0f, 0.01f };
+	float rHat[NZ * NLOOK] = {0};
+	float uHatMin[NU * NLOOK] = {-1.0f, -1.0f, -1.0f};
+	float uHatMax[NU * NLOOK] = {1.0f, 1.0f, 1.0f};
+	float uHatMinDelta[NU * (NLOOK - 1)] = {-1.0f, -1.0f};
+	float uHatMaxDelta[NU * (NLOOK - 1)] = {1.0f, 1.0f};
+	float uHatRef[NU * NLOOK] = {0};
+	float uHat[NU * NLOOK] = {0};
+	float lambda[NU * (2 * NLOOK - 1)] = {0};
+
+	mpc_solve(nZ, nU, nLook, nIter, rho, sigma, alpha, z, rHat, uHatMin, uHatMax, uHatMinDelta, uHatMaxDelta, uHatRef, E, F, P, G, Ac, QHat, RHat, uHat, lambda);
+
+	pVec("z", NZ, z);
+	pVec("rHat", NU * NLOOK, rHat);
+	pVec("uHatMin", NU * NLOOK, uHatMin);
+	pVec("uHatMax", NU * NLOOK, uHatMax);
+	pVec("uHatMinDelta", NU * (NLOOK - 1), uHatMinDelta);
+	pVec("uHatMaxDelta", NU * (NLOOK - 1), uHatMaxDelta);
+	pVec("uHatRef", NU * NLOOK, uHatRef);
+	pMat("E", nZ*nLook, NZ, E);
+	pMat("F", nZ*nLook, nU*nLook, F);
+	pMat("P", nU*nLook, nU*nLook, P);
+	pMat("G", nU*nLook, nU*nLook, G);
+	pMat("Ac", nU*(2*nLook-1), nU*nLook, Ac);
+	pVec("QHat", nZ*nLook, QHat);
+	pVec("RHat", nU*nLook, RHat);
+	pVec("uHat", NU * NLOOK, uHat);
+	pVec("lambda", NU * (2 * NLOOK - 1), lambda);
+
+	return 0;
 }
