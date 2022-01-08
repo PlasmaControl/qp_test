@@ -78,12 +78,8 @@ void qp_solve(size_t const N, size_t const M,
 			xNext[j] = alpha * xHat[j] + alpha1 * x[j];
 
 		float zNext[M];
-		float zNextNorm = 0.0f;
-		for (size_t j = 0; j < M; ++j) {
-			float const zTemp = clamp(l[j], u[j], alpha * zHat[j] + alpha1 * z[j] + y[j] / rho);
-			zNextNorm = fastMax(zNextNorm, fabsf(zTemp));
-			zNext[j] = zTemp;
-		}
+		for (size_t j = 0; j < M; ++j)
+			zNext[j] = clamp(l[j], u[j], alpha * zHat[j] + alpha1 * z[j] + y[j] / rho);
 
 		float yNext[M];
 		for (size_t j = 0; j < M; ++j)
