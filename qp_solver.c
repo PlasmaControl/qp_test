@@ -59,7 +59,7 @@ void qp_solve(size_t const N, size_t const M,
 
 		float ARhoZ[N];
 		memset(ARhoZ, 0, sizeof(ARhoZ));
-		nstx_matrixMult1d2d(N, M, rhoZ, A, ARhoZ);
+		nstx_matrixMult1d2d(M, N, rhoZ, A, ARhoZ);
 
 		float w[N];
 		for (size_t j = 0; j < N; ++j)
