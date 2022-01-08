@@ -189,8 +189,8 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 }
 
 void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
-	       size_t const rho, size_t const sigma, size_t const alpha, 
 	       size_t const nIter,
+	       float const rho, float const sigma, float const alpha,
 	       float const z[restrict nZ],
 	       float const rHat[restrict nZ * nLook],
 	       float const uHatMin[restrict nU * nLook],
