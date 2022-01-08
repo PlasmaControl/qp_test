@@ -170,15 +170,20 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 	for (size_t i = 0; i < nUL; ++i)
 		P[i][i] += RHat[i];
 
+	// Zero entire matrix to start
+	for (size_t i = 0; i < nUL2; ++i)
+		for (size_t j = 0; j < nUL; ++j)
+			Ac[i][j] = 0.0f;
+
+	// First nUL rows of Ac is normal identity
 	for (size_t i = 0; i < nUL; ++i)
-		for (size_t j = 0; j < nUL; ++j)
-			Ac[i][j] = (i == j)? 1.0f : 0.0f;
-	for (size_t i = nUL; i < nUL2; ++i)
-		for (size_t j = 0; j < nUL; ++j)
-			Ac[i][j] =
-				(j == i)? -1.0f / deltaT :
-				(j == nU + i - nUL)? 1.0f / deltaT :
-				0.0f;
+		Ac[i][i] = 1.0f;
+
+	// Remaining rows have two diagonals
+	for (size_t i = nUL; i < nUL2; ++i) {
+		Ac[i][i - nUL] = -1.0f / deltaT;
+		Ac[i][i - 2] = 1.0f / deltaT;
+	}
 
 	qp_setup(nUL, nUL2, P, Ac, sigma, rho, G);
 }
