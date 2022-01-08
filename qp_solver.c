@@ -240,5 +240,5 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	}
 
 	float residual[2] = {0};
-	qp_solve(nUL, nU, G, P, Ac, rho, sigma, alpha, f, lower, upper, nIter, uHat, lambda, residual);
+	qp_solve(nUL, nUL2, G, P, Ac, rho, sigma, alpha, f, lower, upper, nIter, uHat, lambda, residual);
 }
