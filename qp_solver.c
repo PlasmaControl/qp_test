@@ -126,7 +126,7 @@ void qp_solve(size_t const N, size_t const M,
 	memset(Px, 0, sizeof(Px));
 	memset(yA, 0, sizeof(yA));
 	nstx_matrixMult2d1d(N, N, P, x, Px);
-	nstx_matrixMult1d2d(N, M, y, A, yA);
+	nstx_matrixMult1d2d(M, N, y, A, yA);
 	for (size_t i = 0; i < N; ++i)
 		resD[i] = Px[i] + q[i] + yA[i];
 	residual[1] = infNorm(N, resD);
