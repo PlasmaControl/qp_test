@@ -45,13 +45,8 @@ void qp_solve(size_t const N, size_t const M,
 
 	float const alpha1 = 1.0f - alpha;
 
-	float x[N];
-	for (size_t i = 0; i < N; ++i)
-		x[i] = xOut[i];
-
-	float y[M];
-	for (size_t i = 0; i < M; ++i)
-		y[i] = yOut[i];
+	float * x = xOut;
+	float * y = yOut;
 
 	float z[M];
 	memset(z, 0, sizeof(z));
@@ -98,10 +93,6 @@ void qp_solve(size_t const N, size_t const M,
 		for (size_t j = 0; j < M; ++j) y[j] = yNext[j];
 		for (size_t j = 0; j < M; ++j) z[j] = zNext[j];
 	}
-	for (size_t i = 0; i < N; ++i)
-		xOut[i] = x[i];
-	for (size_t i = 0; i < M; ++i)
-		yOut[i] = y[i];
 
 	float infNorm(size_t const N, float const v[N]) {
 		float temp = 0.0f;
@@ -238,14 +229,16 @@ void mpc_solve(size_t const nZ, size_t const nU, size_t nLook,
 	nstx_matrixMult2d1d(nZL, nZ, E, z, fTemp);
 	for (size_t i = 0; i < nZL; ++i) {
 		fTemp[i] -= rHat[i];
-		fTemp[i] *= QHat[i] * 2.0f;
+		fTemp[i] *= QHat[i];
 	}
 
 	float f[nUL];
 	memset(f, 0, sizeof(f));
 	nstx_matrixMult1d2d(nZL, nUL, fTemp, F, f);
-	for (size_t i = 0; i < nUL; ++i)
+	for (size_t i = 0; i < nUL; ++i) {
 		f[i] -= RHat[i] * uHatRef[i];
+		f[i] *= 2.0f;
+	}
 
 	float residual[2] = {0};
 	qp_solve(nUL, nU, G, P, Ac, rho, sigma, alpha, f, lower, upper, nIter, uHat, lambda, residual);
