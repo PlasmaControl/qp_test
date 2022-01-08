@@ -134,23 +134,21 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 	size_t const nUL = nU * nLook;
 	size_t const nUL2 = nU * (2 * nLook - 1);
 
-	float Atemp[nLook][nZ][nZ];
 	for (size_t i = 0; i < nZ; ++i)
 		for (size_t j = 0; j < nZ; ++j)
 			E[i][j] = A[i][j];
-	for (size_t i = 1; i < nLook; ++i)
-		nstx_matrixMult2d2d(nZ, nZ, nZ, A, &E[i-1], &E[i]);
+	for (size_t i = nZ; i < nZL; i += nZ)
+		nstx_matrixMult2d2d(nZ, nZ, nZ, A, &E[i - nZ], &E[i]);
 
 	for (size_t i = 0; i < nLook; ++i)
-		for (size_t j = 0; j <= i; ++j) {
+		for (size_t x = 0; x < nZ; ++x)
+			for (size_t y = 0; y < nU; ++y)
+				F[i * nZ + x][i * nU + y] = B[x][y];
+	for (size_t i = 1; i < nLook; ++i)
+		for (size_t j = 0; j < i; ++j) {
 			float Ftemp[nZ][nU];
 			memset(Ftemp, 0, sizeof(Ftemp));
-			if (i == j)
-				for (size_t x = 0; x < nZ; ++x)
-					for (size_t y = 0; y < nU; ++y)
-						Ftemp[x][y] = B[x][y];
-			else
-				nstx_matrixMult2d2d(nZ, nZ, nU, Atemp[i - 1], B, Ftemp);
+			nstx_matrixMult2d2d(nZ, nZ, nU, &E[nZ * (i - j - 1)], B, Ftemp);
 			for (size_t x = 0; x < nZ; ++x)
 				for (size_t y = 0; y < nU; ++y)
 					F[i * nZ + x][j * nU + y] = Ftemp[x][y];
