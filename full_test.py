@@ -2,52 +2,89 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
+Nlook=100
+sigma=1e-4 #1.4
+rho=0.1
+alpha=1.6
+nIter=5
+
 for c_or_python in ['c','python']:
     if c_or_python=='c':
         from python_c_helpers import *
     else:
         from mpc_qp_helpers import *
 
-    num_sim_timesteps=250
+    num_sim_timesteps=1000
 
     ##### START SYSTEM SETUP #####
-    '''
-    For a spring with mass m, spring constant k, damping b,
-    positive force u:
-    \dot{x}=Ax+Bu for 
-    A=[[0,1],[-k/m,-b/m]] B=[0,1/m]
-    (see 433 notes)
-    For our case of discrete time, we simply multiply 
-    A and B by delta_t, and add the identity to A
-    '''
-    m=1
-    k=1
-    b=0.1
-    delta_t=0.02
-    nu=1
-    nx=2
-    A=np.array([[1,delta_t],[-k/m*delta_t,1-b/m*delta_t]])
-    B=np.atleast_2d(np.array([0,1/m*delta_t])).T
-    Q=np.array([[1.,0],[0,1]])
-    R=np.array([[1.]])
-    Nlook=100
-    sigma=1e-4 #1.4
-    rho=0.1
+    if False:
+        '''
+        For a spring with mass m, spring constant k, damping b,
+        positive force u:
+        \dot{x}=Ax+Bu for 
+        A=[[0,1],[-k/m,-b/m]] B=[0,1/m]
+        (see 433 notes)
+        For our case of discrete time, we simply multiply 
+        A and B by delta_t, and add the identity to A
+        '''
+        m=1
+        k=1
+        b=0.1
+        delta_t=0.02
+        nu=1
+        nx=2
+        A=np.array([[1,delta_t],[-k/m*delta_t,1-b/m*delta_t]])
+        B=np.atleast_2d(np.array([0,1/m*delta_t])).T
+        Q=np.array([[1.,0],[0,1]])
+        R=np.array([[1.]])
 
-    alpha=1.6
-    nIter=5
-    uref=np.array([0])
-    xref=np.array([0,0]) #target position 0, velocity 0
-    umin=np.array([-0.005])
-    umax=np.array([1])
-    delta_umin=np.array([-1])
-    delta_umax=np.array([1])
+        uref=np.array([0])
+        xref=np.array([0,0]) #target position 0, velocity 0
+        umin=np.array([-0.005])
+        umax=np.array([1])
+        delta_umin=np.array([-1])
+        delta_umax=np.array([1])
 
-    x=np.array([0,0.01]) #initial position 0, velocity 0
+        x=np.array([0,0.01]) #initial position 0, velocity 0
+        ##### END SYSTEM SETUP #####
+    ##### START SYSTEM SETUP #####
+    else:
+        '''
+        For 2 carts with independent engines, wall on left to spring to first
+        cart to second spring to second cart. x-l1 the first variable, y-l2
+        the second for l1 and l2 the relaxed spring lengths. 
+        '''
+        m1=1
+        m2=1
+        k1=1
+        k2=1
+        b1=0.1
+        b2=0.1
+        delta_t=0.02
+        nu=2
+        nx=4
+        A=np.array([[1,              delta_t,         0,              0],
+                    [-k1/m1*delta_t, 1-b1/m1*delta_t, 0,              0],
+                    [0,              0,               1,              delta_t],
+                    [k2/m2*delta_t,  0,               -k2/m2*delta_t, 1-b2/m2*delta_t]])
+        B=np.array([[0,            0],
+                    [1/m1*delta_t, 0],
+                    [0,            0],
+                    [0,            1/m2*delta_t]])
+        Q=np.eye(nx)
+        R=np.eye(nu)
+
+        uref=np.array([0,0])
+        xref=np.array([0,0,0,0]) #target position 0, velocity 0
+        umin=np.array([-0.005,0])
+        umax=np.array([1,0])
+        delta_umin=np.array([-1,-1])
+        delta_umax=np.array([1,1])
+
+        x=np.array([0.01,0,0,0]) 
+        ##### END SYSTEM SETUP #####
     u=np.zeros((nu*Nlook)) #initial guess for best control all 0
     lamb=np.zeros((nu*(2*Nlook-1))) #initial guess for Lagrangian forces 0
-    ##### END SYSTEM SETUP #####
-
 
     (E_python,F_python,P_python,G_python,
      Ac_python,Qhat_python,Rhat_python)=mpc_setup(Nlook=Nlook, A=A, B=B, Q=Q, R=R, 
@@ -87,7 +124,7 @@ for c_or_python in ['c','python']:
         x=A@X_MPC[(i-1)*nx:i*nx]+B@u_MPC[i*nu:(i+1)*nu]
         X_MPC[i*nx:(i+1)*nx]=x
 
-    if False:
+    if True:
         times=np.linspace(0,num_sim_timesteps*delta_t,num_sim_timesteps)
         fig,axes=plt.subplots(nx+nu,sharex=True)
         for i in range(nx):

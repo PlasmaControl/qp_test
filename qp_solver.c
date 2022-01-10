@@ -196,9 +196,9 @@ void mpc_setup(size_t const nZ, size_t const nU, size_t const nLook,
 		Ac[i][i] = 1.0f;
 
 	// Remaining rows have two diagonals
-	for (size_t i = nUL; i < nUL2; ++i) {
-		Ac[i][i - nUL] = -1.0f / deltaT;
-		Ac[i][i - 2] = 1.0f / deltaT;
+	for (size_t i = 0; i < nUL-1; ++i) {
+		Ac[i+nUL][i] = -1.0f / deltaT;
+		Ac[i+nUL][i+nU] = 1.0f / deltaT;
 	}
 
 	qp_setup(nUL, nUL2, P, Ac, sigma, rho, G);
