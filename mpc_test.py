@@ -2,7 +2,7 @@ import numpy as np
 import mpc_qp_helpers
 import python_c_helpers
 
-if False:
+if True:
     '''
     For a spring with mass m, spring constant k, damping b,
     positive force u:
@@ -80,11 +80,11 @@ rho=0.1
 
 (E,F,P,G,
  Ac,Qhat,Rhat)=python_c_helpers.mpc_setup(Nlook=Nlook, A=A, B=B, Q=Q, R=R,
-                                          sigma=sigma, rho=rho, delta_t=delta_t)
+                                          sigma=sigma, rho=rho, dt=delta_t)
 
 (E_python,F_python,P_python,G_python,
  Ac_python,Qhat_python,Rhat_python)=mpc_qp_helpers.mpc_setup(Nlook=Nlook, A=A, B=B, Q=Q, R=R,
-                                                             sigma=sigma, rho=rho, delta_t=delta_t)
+                                                             sigma=sigma, rho=rho, dt=delta_t)
 
 print("Testing mpc_setup")
 print()
@@ -145,24 +145,30 @@ umax_hat = np.tile(umax, (Nlook,))
 delta_umin_hat = np.tile(delta_umin, (Nlook-1,))
 delta_umax_hat = np.tile(delta_umax, (Nlook-1,))
 
-(xf,yf)=mpc_qp_helpers.mpc_solve(Nlook,
-                                 xref_hat, x0, umin_hat, umax_hat,
-                                 uref_hat, delta_umin_hat, delta_umax_hat,
-                                 E_python, F_python, P_python, G_python,
-                                 Ac_python, Qhat_python, Rhat_python,
-                                 rho, sigma, alpha, nIter,
-                                 u0, lamb0)
+(xf,yf)=mpc_qp_helpers.mpc_action(zk=x0, ztarget=xref_hat,
+                                  uhat=u0, lagrange=lamb0,
+                                  uminhat=umin_hat, duminhat=delta_umin_hat,
+                                  umaxhat=umax_hat, dumaxhat=delta_umax_hat,
+                                  urefhat=uref_hat,
+                                  E=E_python, F=F_python, P=P_python,
+                                  G=G_python, Ac=Ac_python,
+                                  Qhat=Qhat_python, Rhat=Rhat_python,
+                                  rho=rho, sigma=sigma, alpha=alpha,
+                                  maxiter=nIter)
 print('Python MPC solution:')
 print(f'xf: {xf}')
 print(f'yf: {yf}')
 
-(xf,yf)=python_c_helpers.mpc_solve(Nlook,
-                                   xref_hat, x0, umin_hat, umax_hat,
-                                   uref_hat, delta_umin_hat, delta_umax_hat,
-                                   E_python, F_python, P_python, G_python,
-                                   Ac_python, Qhat_python, Rhat_python,
-                                   rho, sigma, alpha, nIter,
-                                   u0, lamb0)
+(xf,yf)=python_c_helpers.mpc_action(zk=x0, ztarget=xref_hat,
+                                    uhat=u0, lagrange=lamb0,
+                                    uminhat=umin_hat, duminhat=delta_umin_hat,
+                                    umaxhat=umax_hat, dumaxhat=delta_umax_hat,
+                                    urefhat=uref_hat,
+                                    E=E_python, F=F_python, P=P_python,
+                                    G=G_python, Ac=Ac_python,
+                                    Qhat=Qhat_python, Rhat=Rhat_python,
+                                    rho=rho, sigma=sigma, alpha=alpha,
+                                    maxiter=nIter)
 print('C MPC solution:')
 print(f'xf: {xf}')
 print(f'yf: {yf}')

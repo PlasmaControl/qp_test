@@ -54,7 +54,7 @@ def qp_setup(P,A,rho,sigma):
                   G)
     return ctypes_to_array_2d(G,N,N)
 
-def qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0,nIter):
+def qp_solve(G, P, q, A, l, u, rho, sigma, alpha, x0, y0, maxiter):
     N=A.shape[1]
     M=A.shape[0]
 
@@ -89,13 +89,13 @@ def qp_solve(G,P,A,rho,sigma,alpha,q,l,u,x0,y0,nIter):
     clib.qp_solve(N, M,
                   G, P, A,
                   rho, sigma, alpha,
-                  q, l, u, nIter,
+                  q, l, u, maxiter,
                   x0, y0, residuals)
     return (ctypes_to_array_1d(x0,N),
             ctypes_to_array_1d(y0,M),
             ctypes_to_array_1d(residuals,2))
 
-def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
+def mpc_setup(A, B, Q, R, Nlook, rho, sigma, dt, use_osqp=False):
     nu=B.shape[1]
     nz=B.shape[0]
 
@@ -134,7 +134,7 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
 
     clib.mpc_setup(nz, nu, Nlook,
                    A, B, Q, R, 
-                   sigma, rho, delta_t,
+                   sigma, rho, dt,
                    E, F, P, G, Ac, Qhat, Rhat)
     return (ctypes_to_array_2d(E,nz*Nlook,nz),
             ctypes_to_array_2d(F,nz*Nlook,nu*Nlook),
@@ -144,14 +144,32 @@ def mpc_setup(Nlook, A, B, Q, R, sigma, rho, delta_t):
             np.diag(ctypes_to_array_1d(Qhat,nz*Nlook)),
             np.diag(ctypes_to_array_1d(Rhat,nu*Nlook)))
 
-def mpc_solve(Nlook,
-              xref_hat, x0, umin_hat, umax_hat,
-              uref_hat, delta_umin_hat, delta_umax_hat,
-              E, F, P, G, Ac, Qhat, Rhat,
-              rho, sigma, alpha, nIter,
-              u0, lamb0):
-    nu=int(len(u0)/Nlook)
-    nz=len(x0)
+def mpc_action(
+    zk,
+    ztarget,
+    uhat,
+    lagrange,
+    uminhat,
+    duminhat,
+    urefhat,
+    dumaxhat,
+    umaxhat,
+    E,
+    F,
+    P,
+    G,
+    Ac,
+    Qhat,
+    Rhat,
+    rho,
+    sigma,
+    alpha,
+    maxiter,
+    qp=None,
+):
+    nz=len(zk)
+    Nlook=int(len(Qhat)/nz)
+    nu=int(len(Rhat)/Nlook)
 
     clib=ctypes.cdll.LoadLibrary('./libqp_solver.so')
     clib.mpc_solve.restype=None
@@ -179,13 +197,13 @@ def mpc_solve(Nlook,
                              ctypes.c_float*(nu*Nlook), #uHat
                              ctypes.c_float*(nu*(2*Nlook-1))] #lambda
 
-    xref_hat=array_to_ctypes_1d(xref_hat)
-    x0=array_to_ctypes_1d(x0)
-    umin_hat=array_to_ctypes_1d(umin_hat)
-    umax_hat=array_to_ctypes_1d(umax_hat)
-    uref_hat=array_to_ctypes_1d(uref_hat)
-    delta_umin_hat=array_to_ctypes_1d(delta_umin_hat)
-    delta_umax_hat=array_to_ctypes_1d(delta_umax_hat)
+    ztarget=array_to_ctypes_1d(ztarget)
+    zk=array_to_ctypes_1d(zk)
+    uminhat=array_to_ctypes_1d(uminhat)
+    umaxhat=array_to_ctypes_1d(umaxhat)
+    urefhat=array_to_ctypes_1d(urefhat)
+    duminhat=array_to_ctypes_1d(duminhat)
+    dumaxhat=array_to_ctypes_1d(dumaxhat)
     E=array_to_ctypes_2d(E)
     F=array_to_ctypes_2d(F)
     P=array_to_ctypes_2d(P)
@@ -194,20 +212,20 @@ def mpc_solve(Nlook,
     Qhat=array_to_ctypes_1d(np.diag(Qhat))
     Rhat=array_to_ctypes_1d(np.diag(Rhat))
 
-    u0=array_to_ctypes_1d(u0)
-    lamb0=array_to_ctypes_1d(lamb0)
+    uhat=array_to_ctypes_1d(uhat)
+    lagrange=array_to_ctypes_1d(lagrange)
 
     clib.mpc_solve(nz, nu, Nlook,
-                   nIter, 
+                   maxiter, 
                    rho, sigma, alpha,
-                   x0,
-                   xref_hat,
-                   umin_hat, umax_hat, delta_umin_hat, delta_umax_hat,
-                   uref_hat, 
+                   zk,
+                   ztarget,
+                   uminhat, umaxhat, duminhat, dumaxhat,
+                   urefhat, 
                    E, F, P, G, Ac, Qhat, Rhat,
-                   u0, lamb0)
-    return (ctypes_to_array_1d(u0,nu*Nlook),
-            ctypes_to_array_1d(lamb0,nu*(2*Nlook-1)))
+                   uhat, lagrange)
+    return (ctypes_to_array_1d(uhat,nu*Nlook),
+            ctypes_to_array_1d(lagrange,nu*(2*Nlook-1)))
 
 if __name__ == "__main__":
     n = 5 # number of variables

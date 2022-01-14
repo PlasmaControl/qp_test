@@ -79,16 +79,20 @@ try:
 except:
     pass
 
-xf, yf, k, r_prim, r_dual = mpc_qp_helpers.qp_solve(G,P,A,rho,sigma,alpha,
-                                                    q,l,u,x0,y0,maxiter)
+xf, yf, k, r_prim, r_dual = mpc_qp_helpers.qp_solve(G=G, P=P, q=q, A=A,
+                                                    l=l, u=u,
+                                                    rho=rho, sigma=sigma, alpha=alpha,
+                                                    x0=x0, y0=y0, maxiter=maxiter)
 print("Python implementation of qp_solve: ")
 print("x=", xf)
 print("y=", yf)
 print("residual=",[r_prim,r_dual])
 print()
 
-xf, yf, residual = python_c_helpers.qp_solve(G,P,A,rho,sigma,alpha,
-                                             q,l,u,x0,y0,maxiter)
+xf, yf, residual = python_c_helpers.qp_solve(G=G, P=P, q=q, A=A,
+                                             l=l, u=u,
+                                             rho=rho, sigma=sigma, alpha=alpha,
+                                             x0=x0, y0=y0, maxiter=maxiter)
 print("C implementation of qp_solver, with Python's G matrix: ")
 print("x=", xf)
 print("y=", yf)
